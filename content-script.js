@@ -1,93 +1,90 @@
 (function () {
-  const overlayId = "overlay2cdacaq313g";
-  const existingOverlay = document.getElementById(overlayId);
+  const canvasId = "backgroundCanvas";
+  const existingCanvas = document.getElementById(canvasId);
 
-  if (existingOverlay) {
-    // Existing overlay found, remove circles and the overlay
-    const circles = document.querySelectorAll(".circle");
-    circles.forEach((circle) => circle.remove());
-    existingOverlay.remove(); // Remove the overlay
-  } else {
-    // Create and add a new overlay
-    const overlay = document.createElement("div");
-    overlay.id = overlayId; // Set ID
-    overlay.className = "overlay2cdacaq313g";
-    overlay.style.position = "fixed"; // Make overlay fixed
-    overlay.style.top = "0";
-    overlay.style.left = "0";
-    overlay.style.width = "100%";
-    overlay.style.height = "100%";
-    document.body.appendChild(overlay);
-
-    overlay.addEventListener("click", () => {
-      console.log("workworkwor");
-    });
-
-    // Create 50 circles
-    for (let i = 0; i < 50; i++) {
-      createRandomCircle();
-    }
+  // 기존 canvas가 있다면 삭제
+  if (existingCanvas) {
+    existingCanvas.remove();
   }
 
-  function createRandomCircle() {
-    const circle = document.createElement("div");
-    const size = Math.random() * 70 + 30; // Size: 30px ~ 100px
-    const color = getRandomColor(); // Random color
+  // 새로운 canvas 생성
+  const canvas = document.createElement("canvas");
+  canvas.id = canvasId;
 
-    circle.style.width = `${size}px`;
-    circle.style.height = `${size}px`;
-    circle.style.backgroundColor = color;
-    circle.style.borderRadius = "50%"; // Make it circular
-    circle.style.position = "absolute"; // Use absolute positioning
-    circle.className = "circle"; // Add class name
-    circle.style.pointerEvents = "none"; // Ignore click events
-    circle.style.zIndex = 9999;
-    circle.style.cursor = "pointer";
+  // 창 크기에 맞춰 canvas 크기 설정
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 
-    // Add hover effect
-    circle.addEventListener("mouseover", () => {
-      console.log("work");
-    });
+  // canvas를 화면에 고정시키고, 스타일 적용
+  canvas.style.position = "fixed";
+  canvas.style.top = "0";
+  canvas.style.left = "0";
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+  canvas.style.zIndex = "1000";
+  document.body.appendChild(canvas);
 
-    circle.addEventListener("mouseout", () => {
-      console.log("work2");
-    });
+  const ctx = canvas.getContext("2d");
 
-    // Randomly choose an edge to place the circle
-    const edge = Math.floor(Math.random() * 4); // 0: top, 1: right, 2: bottom, 3: left
-    let x, y;
+  // 공의 속성
+  const ball = {
+    x: 50, // 공의 초기 위치 (X 좌표)
+    y: canvas.height, // 공의 초기 위치 (Y 좌표)
+    radius: 30, // 공의 반지름
+    color: "red", // 공의 색상
+    speed: 2, // 공이 이동하는 속도
+    dx: 2, // 공의 X축 방향 이동 속도
+    isMoving: true // 공이 움직이고 있는지 여부
+  };
 
-    switch (edge) {
-      case 0: // Top
-        x = Math.random() * (window.innerWidth - size);
-        y = 0; // Fixed at the top
-        break;
-      case 1: // Right
-        x = window.innerWidth - size; // Fixed at the right
-        y = Math.random() * (window.innerHeight - size);
-        break;
-      case 2: // Bottom
-        x = Math.random() * (window.innerWidth - size);
-        y = window.innerHeight - size; // Fixed at the bottom
-        break;
-      case 3: // Left
-        x = 0; // Fixed at the left
-        y = Math.random() * (window.innerHeight - size);
-        break;
-    }
-
-    circle.style.left = `${x}px`;
-    circle.style.top = `${y}px`;
-
-    document.getElementById("overlay2cdacaq313g").appendChild(circle);
+  // 공을 그리는 함수
+  function drawBall() {
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2); // 공 그리기
+    ctx.fillStyle = ball.color;
+    ctx.fill();
+    ctx.closePath();
   }
 
-  function getRandomColor() {
-    const letters = "0123456789ABCDEF";
-    let color = "#";
-    for (let i = 0; i < 6; i++) {
-      color += letters[Math.floor(Math.random() * 16)];
+  // 애니메이션을 업데이트하는 함수
+  function update() {
+    if (ball.isMoving) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // 이전 프레임 지우기
+
+      // 공의 새로운 위치 계산
+      ball.x += ball.dx;
+
+      // 공이 화면 끝에 도달하면 반대 방향으로 이동
+      if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+        ball.dx *= -1; // 이동 방향 반전
+      }
+
+      // 공을 그리기
+      drawBall();
     }
-    return color;
+
+    // 애니메이션을 다시 요청
+    requestAnimationFrame(update);
   }
+
+  // 애니메이션 시작
+  update();
+
+  // 마우스가 공 주위에 있을 때만 공 멈추기
+  canvas.addEventListener("mousemove", (e) => {
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+
+    // 마우스와 공 사이의 거리 계산
+    const distance = Math.sqrt(
+      (mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2
+    );
+
+    // 마우스가 공의 반지름 내에 있을 경우 공을 멈춤
+    if (distance < ball.radius * 2) {
+      ball.isMoving = false;
+    } else {
+      ball.isMoving = true;
+    }
+  });
 })();
