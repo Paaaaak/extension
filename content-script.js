@@ -29,7 +29,7 @@
 
   // 공의 속성
   const ball = {
-    x: 50, // 공의 초기 위치 (X 좌표)
+    x: canvas.width * Math.random(), // 공의 초기 위치 (X 좌표)
     y: canvas.height, // 공의 초기 위치 (Y 좌표)
     radius: 30, // 공의 반지름
     color: "red", // 공의 색상
