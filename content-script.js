@@ -23,6 +23,7 @@
   canvas.style.width = "100%";
   canvas.style.height = "100%";
   canvas.style.zIndex = "1000";
+  canvas.style.pointerEvents = "none"; // 클릭 등 이벤트 무시
   document.body.appendChild(canvas);
 
   const ctx = canvas.getContext("2d");
@@ -71,8 +72,8 @@
   // 애니메이션 시작
   update();
 
-  // 마우스가 공 주위에 있을 때만 공 멈추기
-  canvas.addEventListener("mousemove", (e) => {
+  // 공 주위에서만 공 멈추기
+  document.addEventListener("mousemove", (e) => {
     const mouseX = e.clientX;
     const mouseY = e.clientY;
 
