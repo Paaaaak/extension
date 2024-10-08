@@ -5,6 +5,7 @@
   // 기존 canvas가 있다면 삭제
   if (existingCanvas) {
     existingCanvas.remove();
+    return;
   }
 
   // 새로운 canvas 생성
@@ -34,7 +35,7 @@
     color: "red", // 공의 색상
     speed: 2, // 공이 이동하는 속도
     dx: 2, // 공의 X축 방향 이동 속도
-    isMoving: true // 공이 움직이고 있는지 여부
+    isMoving: true, // 공이 움직이고 있는지 여부
   };
 
   // 공을 그리는 함수
@@ -76,9 +77,7 @@
     const mouseY = e.clientY;
 
     // 마우스와 공 사이의 거리 계산
-    const distance = Math.sqrt(
-      (mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2
-    );
+    const distance = Math.sqrt((mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2);
 
     // 마우스가 공의 반지름 내에 있을 경우 공을 멈춤
     if (distance < ball.radius * 2) {
