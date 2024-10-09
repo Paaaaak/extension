@@ -102,19 +102,21 @@
         if (this.y + this.radius >= canvas.height) {
           this.isFalling = false;
           this.isMoving = true;
+          this.isMouseOn = false;
           this.y = canvas.height;
-          
 
-    // dx를 랜덤하게 설정 (음수 또는 양수)
-    this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
+          // dx를 랜덤하게 설정 (음수 또는 양수)
+          this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
         } else {
           this.speed += this.gravity;
         }
 
         this.draw();
+
       } else if (this.isMouseOn) {
         this.color = "yellow";
         this.draw();
+
       } else if (this.isMoving) {
         ctx.clearRect(0, 0, canvas.width, canvas.height); // 이전 프레임 지우기
 
