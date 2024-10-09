@@ -126,10 +126,17 @@
         this.y = canvas.height - this.radius;
         this.x += this.dx;
 
-        // 좌우 화면 끝에 도달하면 반대 방향으로 이동
-        if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
-          this.dx *= -1; // 이동 방향 반전
+        if (this.x > canvas.width) {
+          this.dx = -0.5;
+        } 
+        if (this.x < 0) {
+          this.dx = 0.5;
         }
+ 
+        // 좌우 화면 끝에 도달하면 반대 방향으로 이동
+        // if (this.x > canvas.width - this.radius || this.x < 0 - this.radius ) {
+        //   this.dx *= -1; // 이동 방향 반전
+        // }
 
         // 프레임 변경 로직
         if (currentTime - this.lastFrameTime >= this.frameDuration) {
