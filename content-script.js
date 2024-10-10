@@ -147,20 +147,42 @@ var Capybara = function (x, y, radius, color, speed, ctx, canvas, images) {
   this.speed = speed;
   this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
   this.gravity = 0.9;
-  this.isMoving = true;
+  this.isMoving = false;
+  this.isSleeping = false; // 추가: 초기 상태는 sleeping 아님
   this.isDragging = false;
   this.isFalling = false;
   this.isMouseOn = false;
   this.offsetX = 0;
   this.offsetY = 0;
-  this.currentFrame = 0; // 현재 프레임 변수 추가
-  this.frameCount = 8; // 스프라이트의 총 프레임 수
-  this.frameWidth = images[0].width / this.frameCount; // 프레임 너비 계산
-  this.lastFrameTime = 0; // 마지막 프레임 시간
-  this.frameDuration = 50; // 프레임 변경 시간 (밀리초)
+  this.currentFrame = 0;
+  this.frameCount = 8;
+  this.frameWidth = images[0].width / this.frameCount;
+  this.lastFrameTime = 0;
+  this.frameDuration = 50;
   this.ctx = ctx;
   this.canvas = canvas;
   this.images = images;
+  this.randomState = "sleeping"; // 초기 상태는 sleeping
+  this.nextStateChange = 0; // 다음 상태 변경 시간
+
+  // 상태 전환을 위한 타이머 설정
+  this.setRandomState();
+};
+
+Capybara.prototype.setRandomState = function () {
+  const minTime = 5000; // 5초
+  const maxTime = 20000; // 20초
+  const randomTime = Math.random() * (maxTime - minTime) + minTime;
+
+  if (this.randomState === "sleeping") {
+    this.randomState = "moving"; // sleeping 후 moving으로 전환
+    this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
+  } else {
+    this.randomState = "sleeping"; // moving 후 sleeping으로 전환
+  }
+
+  // 다음 상태 변경 타이머 설정
+  this.nextStateChange = Date.now() + randomTime;
 };
 
 Capybara.prototype.animate = function () {
@@ -170,41 +192,35 @@ Capybara.prototype.animate = function () {
   this.ctx.fill();
   this.ctx.closePath();
 
-  // 스프라이트 이미지 선택 (이동 방향에 따라)
-  const imageToDraw = this.dx > 0 ? this.images[0] : this.images[1]; // dx가 양수면 오른쪽 이미지, 음수면 왼쪽 이미지
-
-  // 공 위에 이미지 그리기 (중앙에 배치)
-  const imageSize = this.radius * 2; // 이미지 크기를 공 크기에 맞게 설정
+  const imageToDraw = this.dx > 0 ? this.images[0] : this.images[1];
+  const imageSize = this.radius * 2;
 
   this.ctx.drawImage(
     imageToDraw,
-    this.currentFrame * this.frameWidth, // 스프라이트에서 현재 프레임 위치
-    0, // 스프라이트 이미지의 Y 위치 (여기서는 0)
-    this.frameWidth, // 프레임 너비
-    imageToDraw.height, // 프레임 높이
-    this.x - this.radius, // 공 위치 X
-    this.y - this.radius, // 공 위치 Y
-    imageSize, // 공 크기에 맞춘 이미지 너비
-    imageSize // 공 크기에 맞춘 이미지 높이
+    this.currentFrame * this.frameWidth,
+    0,
+    this.frameWidth,
+    imageToDraw.height,
+    this.x - this.radius,
+    this.y - this.radius,
+    imageSize,
+    imageSize
   );
 };
 
 Capybara.prototype.update = function (currentTime) {
   if (this.isDragging) {
     this.color = "green";
-    return; // 드래그 중일 때는 위치를 업데이트하지 않음
+    return;
   } else if (this.isFalling) {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // 이전 프레임 지우기
-
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.color = "blue";
 
-    // 중력 적용하여 아래로 떨어짐
     this.y += this.speed;
 
-    // 땅에 닿았을 경우
     if (this.y + this.radius >= this.canvas.height) {
       this.y = this.canvas.height - this.radius;
-      this.speed = -this.speed * 0.4; // Reverse speed and reduce it for bounce (40% energy retained)
+      this.speed = -this.speed * 0.4;
       if (Math.abs(this.speed) < 1.5) {
         this.isFalling = false;
         this.isMouseOn = false;
@@ -220,12 +236,9 @@ Capybara.prototype.update = function (currentTime) {
   } else if (this.isMouseOn) {
     this.color = "yellow";
     this.animate();
-  } else if (this.isMoving) {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // 이전 프레임 지우기
-
+  } else if (this.randomState === "moving") {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.color = "transparent";
-
-    // 공의 위치 업데이트
     this.y = this.canvas.height - this.radius;
     this.x += this.dx;
 
@@ -236,16 +249,22 @@ Capybara.prototype.update = function (currentTime) {
       this.dx = 0.5;
     }
 
-    // 프레임 변경 로직
     if (currentTime - this.lastFrameTime >= this.frameDuration) {
-      this.currentFrame = (this.currentFrame + 1) % this.frameCount; // 프레임 변경
-      this.lastFrameTime = currentTime; // 현재 시간을 마지막 프레임 시간으로 업데이트
+      this.currentFrame = (this.currentFrame + 1) % this.frameCount;
+      this.lastFrameTime = currentTime;
     }
 
     this.animate();
+  } else if (this.randomState === "sleeping") {
+    this.color = "gray"; // sleeping 중일 때 색상
+    this.animate();
   }
 
-  // 애니메이션을 다시 요청
+  // 상태 전환
+  if (Date.now() >= this.nextStateChange) {
+    this.setRandomState();
+  }
+
   requestAnimationFrame(this.update.bind(this));
 };
 
