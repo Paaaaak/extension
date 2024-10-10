@@ -146,7 +146,7 @@ var Capybara = function (x, y, radius, color, speed, ctx, canvas, images) {
   this.color = color;
   this.speed = speed;
   this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
-  this.gravity = 0.1;
+  this.gravity = 0.9;
   this.isMoving = true;
   this.isDragging = false;
   this.isFalling = false;
@@ -203,12 +203,15 @@ Capybara.prototype.update = function (currentTime) {
 
     // 땅에 닿았을 경우
     if (this.y + this.radius >= this.canvas.height) {
-      this.isFalling = false;
-      this.isMoving = true;
-      this.isMouseOn = false;
-      this.y = this.canvas.height;
-
-      this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
+      this.y = this.canvas.height - this.radius;
+      this.speed = -this.speed * 0.4; // Reverse speed and reduce it for bounce (40% energy retained)
+      if (Math.abs(this.speed) < 1.5) {
+        this.isFalling = false;
+        this.isMouseOn = false;
+        this.isMoving = true;
+        this.y = this.canvas.height - this.radius;
+        this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
+      }
     } else {
       this.speed += this.gravity;
     }

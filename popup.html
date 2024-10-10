@@ -4,8 +4,8 @@
   <title>Popup</title>
   <style>
     body {
-      width: 200px;
-      height: 150px;
+      width: 300px;
+      height: 450px;
       font-family: Arial, sans-serif;
       display: flex;
       flex-direction: column;
@@ -24,7 +24,7 @@
     button {
       padding: 10px 20px;
       cursor: pointer;
-      background-color: #6200ea;
+      background-color: #a3ca48;
       color: white;
       border: none;
       border-radius: 5px;
@@ -32,8 +32,25 @@
   </style>
 </head>
 <body>
-  <h1>Activate Overlay</h1>
-  <button id="action-button">Activate</button>
+  <div>
+    <h1>Chrome Extension</h1>
+    <div>
+      <img style="width: 300px;" src="./sheep-left.png">
+      <div>
+        <span>Activate Object</span>
+        <button id="action-button">Activate</button>
+      </div>
+      <div>
+        <span>Outfit</span>
+        <button>Hat</button>
+        <button>Fruit</button>
+      </div>
+      <div>
+        <span>Apply certain site</span>
+        <input type="text" />
+      </div>
+    </div>
+  </div>
 
   <script src="popup.js"></script>
 </body>
