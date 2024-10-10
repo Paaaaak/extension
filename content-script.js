@@ -126,7 +126,15 @@
         e.stopPropagation();
         capybara.isDragging = false;
         capybara.isMoving = false;
-        capybara.isFalling = true;
+
+        if (capybara.y < canvas.height - 500) {
+          console.log("is falling from high place");
+          capybara.isFallingFromHigh = true;
+        } else {
+          console.log("is falling from low place");
+          capybara.isFalling = true;
+        }
+
         capybara.speed = 2;
         capybara.dx = 0;
         capybara.update();
@@ -150,7 +158,11 @@ var Capybara = function (x, y, radius, color, speed, ctx, canvas, images) {
   this.isMoving = false;
   this.isSleeping = false; // 추가: 초기 상태는 sleeping 아님
   this.isDragging = false;
+
+  this.isFallingFromHigh = false;
   this.isFalling = false;
+  this.isShowUp = false;
+
   this.isMouseOn = false;
   this.offsetX = 0;
   this.offsetY = 0;
@@ -212,6 +224,29 @@ Capybara.prototype.update = function (currentTime) {
   if (this.isDragging) {
     this.color = "green";
     return;
+  } else if (this.isFallingFromHigh) {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.color = "blue";
+
+    this.y += this.speed;
+    this.speed += this.gravity;
+    this.animate();
+
+    // 화면 하단으로 사라진 경우
+    if (this.y > this.canvas.height + 200) {
+      console.log("under the sea");
+
+      // 1.5초 후 setRandomState 호출
+      if (!this.fallTimeout) {
+        this.fallTimeout = setTimeout(() => {
+          this.isFallingFromHigh = false;
+          this.isMouseOn = false;
+          this.isShowUp = true;
+          this.y = this.canvas.height - this.radius;
+          this.fallTimeout = null; // timeout 초기화
+        }, 1500);
+      }
+    }
   } else if (this.isFalling) {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.color = "blue";
@@ -225,7 +260,6 @@ Capybara.prototype.update = function (currentTime) {
         this.isFalling = false;
         this.isMouseOn = false;
         this.isMoving = true;
-        this.y = this.canvas.height - this.radius;
         this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
       }
     } else {
@@ -233,6 +267,18 @@ Capybara.prototype.update = function (currentTime) {
     }
 
     this.animate();
+  } else if (this.isShowUp) {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    console.log("popup");
+    this.y = this.canvas.height - this.radius;
+    this.color = "purple";
+    if (!this.fallTimeout) {
+      this.fallTimeout = setTimeout(() => {
+        console.log("popup222");
+        this.isShowUp = false;
+        this.setRandomState();
+      }, 1500);
+    }
   } else if (this.isMouseOn) {
     this.color = "yellow";
     this.animate();
