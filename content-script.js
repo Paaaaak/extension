@@ -35,6 +35,23 @@
   const leftImage = new Image();
   leftImage.src = chrome.runtime.getURL("sheep-left.png"); // 왼쪽 이미지 경로 설정
 
+  // 이미지가 두 개 다 로드되었을 때 애니메이션 시작
+  let imagesLoaded = 0;
+
+  rightImage.onload = () => {
+    imagesLoaded++;
+    if (imagesLoaded === 2) {
+      startAnimation(); // 두 이미지 모두 로드된 후 애니메이션 시작
+    }
+  };
+
+  leftImage.onload = () => {
+    imagesLoaded++;
+    if (imagesLoaded === 2) {
+      startAnimation(); // 두 이미지 모두 로드된 후 애니메이션 시작
+    }
+  };
+
   // Ball 클래스로 변환
   class Ball {
     constructor(x, y, radius, color, speed, dx, gravity) {
@@ -112,11 +129,9 @@
         }
 
         this.draw();
-
       } else if (this.isMouseOn) {
         this.color = "yellow";
         this.draw();
-
       } else if (this.isMoving) {
         ctx.clearRect(0, 0, canvas.width, canvas.height); // 이전 프레임 지우기
 
@@ -128,11 +143,11 @@
 
         if (this.x > canvas.width) {
           this.dx = -0.5;
-        } 
+        }
         if (this.x < 0) {
           this.dx = 0.5;
         }
- 
+
         // 좌우 화면 끝에 도달하면 반대 방향으로 이동
         // if (this.x > canvas.width - this.radius || this.x < 0 - this.radius ) {
         //   this.dx *= -1; // 이동 방향 반전
@@ -152,83 +167,89 @@
     }
   }
 
-  // Ball 인스턴스 생성
-  const ball = new Ball(
-    canvas.width * Math.random(), // 공의 초기 X 좌표
-    canvas.height, // 공의 초기 Y 좌표
-    30, // 반지름
-    "red", // 색상
-    1, // 속도
-    0.5, // X축 이동 속도
-    0.1 // 중력 값
-  );
+  function startAnimation() {
+    // Ball 인스턴스 생성
+    const ball = new Ball(
+      canvas.width * Math.random(), // 공의 초기 X 좌표
+      canvas.height, // 공의 초기 Y 좌표
+      30, // 반지름
+      "red", // 색상
+      1, // 속도
+      0.5, // X축 이동 속도
+      0.1 // 중력 값
+    );
 
-  // 애니메이션 시작
-  ball.update();
+    // 애니메이션 시작
+    ball.update();
 
-  // 공 주위에서만 공 멈추기
-  document.addEventListener("mousemove", (e) => {
-    const mouseX = e.clientX;
-    const mouseY = e.clientY;
+    // 공 주위에서만 공 멈추기
+    document.addEventListener("mousemove", (e) => {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
 
-    if (!ball.isDragging) {
+      if (!ball.isDragging) {
+        const distance = Math.sqrt(
+          (mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2
+        );
+
+        if (distance < ball.radius * 2) {
+          ball.isMoving = false;
+          ball.isMouseOn = true;
+        } else {
+          ball.isMoving = true;
+          ball.isMouseOn = false;
+        }
+      }
+    });
+
+    // 공을 클릭하면 드래그 시작
+    document.addEventListener("mousedown", (e) => {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
       const distance = Math.sqrt(
         (mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2
       );
 
-      if (distance < ball.radius * 2) {
+      if (distance < ball.radius) {
+        e.preventDefault();
+        e.stopPropagation();
+        ball.isDragging = true;
+        ball.offsetX = mouseX - ball.x;
+        ball.offsetY = mouseY - ball.y;
         ball.isMoving = false;
-        ball.isMouseOn = true;
-      } else {
-        ball.isMoving = true;
-        ball.isMouseOn = false;
       }
-    }
-  });
+    });
 
-  // 공을 클릭하면 드래그 시작
-  document.addEventListener("mousedown", (e) => {
-    const mouseX = e.clientX;
-    const mouseY = e.clientY;
-    const distance = Math.sqrt((mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2);
+    // 마우스 움직임에 따라 공을 드래그
+    document.addEventListener("mousemove", (e) => {
+      if (ball.isDragging) {
+        e.preventDefault();
+        e.stopPropagation();
+        ball.x = e.clientX - ball.offsetX;
+        ball.y = e.clientY - ball.offsetY;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ball.draw();
+      }
+    });
 
-    if (distance < ball.radius) {
-      e.preventDefault();
-      e.stopPropagation();
-      ball.isDragging = true;
-      ball.offsetX = mouseX - ball.x;
-      ball.offsetY = mouseY - ball.y;
-      ball.isMoving = false;
-    }
-  });
+    // 마우스를 놓으면 드래그 종료 및 공이 아래로 떨어짐
+    document.addEventListener("mouseup", (e) => {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      const distance = Math.sqrt(
+        (mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2
+      );
 
-  // 마우스 움직임에 따라 공을 드래그
-  document.addEventListener("mousemove", (e) => {
-    if (ball.isDragging) {
-      e.preventDefault();
-      e.stopPropagation();
-      ball.x = e.clientX - ball.offsetX;
-      ball.y = e.clientY - ball.offsetY;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ball.draw();
-    }
-  });
-
-  // 마우스를 놓으면 드래그 종료 및 공이 아래로 떨어짐
-  document.addEventListener("mouseup", (e) => {
-    const mouseX = e.clientX;
-    const mouseY = e.clientY;
-    const distance = Math.sqrt((mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2);
-
-    if (distance < ball.radius) {
-      e.preventDefault();
-      e.stopPropagation();
-      ball.isDragging = false;
-      ball.isMoving = false;
-      ball.isFalling = true;
-      ball.speed = 2;
-      ball.dx = 0;
-      ball.update();
-    }
-  });
+      if (distance < ball.radius) {
+        e.preventDefault();
+        e.stopPropagation();
+        ball.isDragging = false;
+        ball.isMoving = false;
+        ball.isFalling = true;
+        ball.speed = 2;
+        ball.dx = 0;
+        ball.update();
+      }
+    });
+  }
 })();
