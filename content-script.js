@@ -52,152 +52,39 @@
     }
   };
 
-  // Ball 클래스로 변환
-  class Ball {
-    constructor(x, y, radius, color, speed, dx, gravity) {
-      this.x = x;
-      this.y = y;
-      this.radius = radius;
-      this.color = color;
-      this.speed = speed;
-      this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
-      this.gravity = gravity;
-      this.isMoving = true;
-      this.isDragging = false;
-      this.isFalling = false;
-      this.isMouseOn = false;
-      this.offsetX = 0;
-      this.offsetY = 0;
-
-      this.currentFrame = 0; // 현재 프레임 변수 추가
-      this.frameCount = 8; // 스프라이트의 총 프레임 수
-      this.frameWidth = rightImage.width / this.frameCount; // 프레임 너비 계산
-      this.lastFrameTime = 0; // 마지막 프레임 시간
-      this.frameDuration = 50; // 프레임 변경 시간 (밀리초)
-    }
-
-    // 공을 그리는 메서드
-    draw() {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      ctx.fillStyle = this.color;
-      ctx.fill();
-      ctx.closePath();
-
-      // 스프라이트 이미지 선택 (이동 방향에 따라)
-      const imageToDraw = this.dx > 0 ? rightImage : leftImage; // dx가 양수면 오른쪽 이미지, 음수면 왼쪽 이미지
-
-      // 공 위에 이미지 그리기 (중앙에 배치)
-      const imageSize = this.radius * 2; // 이미지 크기를 공 크기에 맞게 설정
-
-      ctx.drawImage(
-        imageToDraw,
-        this.currentFrame * this.frameWidth, // 스프라이트에서 현재 프레임 위치
-        0, // 스프라이트 이미지의 Y 위치 (여기서는 0)
-        this.frameWidth, // 프레임 너비
-        imageToDraw.height, // 프레임 높이
-        this.x - this.radius, // 공 위치 X
-        this.y - this.radius, // 공 위치 Y
-        imageSize, // 공 크기에 맞춘 이미지 너비
-        imageSize // 공 크기에 맞춘 이미지 높이
-      );
-    }
-
-    // 공의 상태 업데이트 메서드
-    update(currentTime) {
-      if (this.isDragging) {
-        this.color = "green";
-        return; // 드래그 중일 때는 위치를 업데이트하지 않음
-      } else if (this.isFalling) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // 이전 프레임 지우기
-
-        this.color = "blue";
-
-        // 중력 적용하여 아래로 떨어짐
-        this.y += this.speed;
-
-        if (this.y + this.radius >= canvas.height) {
-          this.isFalling = false;
-          this.isMoving = true;
-          this.isMouseOn = false;
-          this.y = canvas.height;
-
-          // dx를 랜덤하게 설정 (음수 또는 양수)
-          this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
-        } else {
-          this.speed += this.gravity;
-        }
-
-        this.draw();
-      } else if (this.isMouseOn) {
-        this.color = "yellow";
-        this.draw();
-      } else if (this.isMoving) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // 이전 프레임 지우기
-
-        this.color = "transparent";
-
-        // 공의 위치 업데이트
-        this.y = canvas.height - this.radius;
-        this.x += this.dx;
-
-        if (this.x > canvas.width) {
-          this.dx = -0.5;
-        }
-        if (this.x < 0) {
-          this.dx = 0.5;
-        }
-
-        // 좌우 화면 끝에 도달하면 반대 방향으로 이동
-        // if (this.x > canvas.width - this.radius || this.x < 0 - this.radius ) {
-        //   this.dx *= -1; // 이동 방향 반전
-        // }
-
-        // 프레임 변경 로직
-        if (currentTime - this.lastFrameTime >= this.frameDuration) {
-          this.currentFrame = (this.currentFrame + 1) % this.frameCount; // 프레임 변경
-          this.lastFrameTime = currentTime; // 현재 시간을 마지막 프레임 시간으로 업데이트
-        }
-
-        this.draw();
-      }
-
-      // 애니메이션을 다시 요청
-      requestAnimationFrame(this.update.bind(this));
-    }
-  }
-
   function startAnimation() {
-    // Ball 인스턴스 생성
-    const ball = new Ball(
+    const capybara = new Capybara(
       canvas.width * Math.random(), // 공의 초기 X 좌표
       canvas.height, // 공의 초기 Y 좌표
       30, // 반지름
       "red", // 색상
       1, // 속도
       0.5, // X축 이동 속도
-      0.1 // 중력 값
+      0.1, // 중력 값
+      ctx,
+      canvas,
+      [rightImage, leftImage]
     );
 
     // 애니메이션 시작
-    ball.update();
+    capybara.update();
 
     // 공 주위에서만 공 멈추기
     document.addEventListener("mousemove", (e) => {
       const mouseX = e.clientX;
       const mouseY = e.clientY;
 
-      if (!ball.isDragging) {
+      if (!capybara.isDragging) {
         const distance = Math.sqrt(
-          (mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2
+          (mouseX - capybara.x) ** 2 + (mouseY - capybara.y) ** 2
         );
 
-        if (distance < ball.radius * 2) {
-          ball.isMoving = false;
-          ball.isMouseOn = true;
+        if (distance < capybara.radius * 2) {
+          capybara.isMoving = false;
+          capybara.isMouseOn = true;
         } else {
-          ball.isMoving = true;
-          ball.isMouseOn = false;
+          capybara.isMoving = true;
+          capybara.isMouseOn = false;
         }
       }
     });
@@ -207,28 +94,28 @@
       const mouseX = e.clientX;
       const mouseY = e.clientY;
       const distance = Math.sqrt(
-        (mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2
+        (mouseX - capybara.x) ** 2 + (mouseY - capybara.y) ** 2
       );
 
-      if (distance < ball.radius) {
+      if (distance < capybara.radius) {
         e.preventDefault();
         e.stopPropagation();
-        ball.isDragging = true;
-        ball.offsetX = mouseX - ball.x;
-        ball.offsetY = mouseY - ball.y;
-        ball.isMoving = false;
+        capybara.isDragging = true;
+        capybara.offsetX = mouseX - capybara.x;
+        capybara.offsetY = mouseY - capybara.y;
+        capybara.isMoving = false;
       }
     });
 
     // 마우스 움직임에 따라 공을 드래그
     document.addEventListener("mousemove", (e) => {
-      if (ball.isDragging) {
+      if (capybara.isDragging) {
         e.preventDefault();
         e.stopPropagation();
-        ball.x = e.clientX - ball.offsetX;
-        ball.y = e.clientY - ball.offsetY;
+        capybara.x = e.clientX - capybara.offsetX;
+        capybara.y = e.clientY - capybara.offsetY;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ball.draw();
+        capybara.draw();
       }
     });
 
@@ -237,19 +124,139 @@
       const mouseX = e.clientX;
       const mouseY = e.clientY;
       const distance = Math.sqrt(
-        (mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2
+        (mouseX - capybara.x) ** 2 + (mouseY - capybara.y) ** 2
       );
 
-      if (distance < ball.radius) {
+      if (distance < capybara.radius) {
         e.preventDefault();
         e.stopPropagation();
-        ball.isDragging = false;
-        ball.isMoving = false;
-        ball.isFalling = true;
-        ball.speed = 2;
-        ball.dx = 0;
-        ball.update();
+        capybara.isDragging = false;
+        capybara.isMoving = false;
+        capybara.isFalling = true;
+        capybara.speed = 2;
+        capybara.dx = 0;
+        capybara.update();
       }
     });
   }
 })();
+
+var Capybara = function (
+  x,
+  y,
+  radius,
+  color,
+  speed,
+  dx,
+  gravity,
+  ctx,
+  canvas,
+  images
+) {
+  this.x = x;
+  this.y = y;
+  this.radius = radius;
+  this.color = color;
+  this.speed = speed;
+  this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
+  this.gravity = gravity;
+  this.isMoving = true;
+  this.isDragging = false;
+  this.isFalling = false;
+  this.isMouseOn = false;
+  this.offsetX = 0;
+  this.offsetY = 0;
+
+  this.currentFrame = 0; // 현재 프레임 변수 추가
+  this.frameCount = 8; // 스프라이트의 총 프레임 수
+  this.frameWidth = images[0].width / this.frameCount; // 프레임 너비 계산
+  this.lastFrameTime = 0; // 마지막 프레임 시간
+  this.frameDuration = 50; // 프레임 변경 시간 (밀리초)
+
+  this.ctx = ctx;
+  this.canvas = canvas;
+  this.images = images;
+};
+
+Capybara.prototype.draw = function () {
+  this.ctx.beginPath();
+  this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+  this.ctx.fillStyle = this.color;
+  this.ctx.fill();
+  this.ctx.closePath();
+
+  // 스프라이트 이미지 선택 (이동 방향에 따라)
+  const imageToDraw = this.dx > 0 ? this.images[0] : this.images[1]; // dx가 양수면 오른쪽 이미지, 음수면 왼쪽 이미지
+
+  // 공 위에 이미지 그리기 (중앙에 배치)
+  const imageSize = this.radius * 2; // 이미지 크기를 공 크기에 맞게 설정
+
+  this.ctx.drawImage(
+    imageToDraw,
+    this.currentFrame * this.frameWidth, // 스프라이트에서 현재 프레임 위치
+    0, // 스프라이트 이미지의 Y 위치 (여기서는 0)
+    this.frameWidth, // 프레임 너비
+    imageToDraw.height, // 프레임 높이
+    this.x - this.radius, // 공 위치 X
+    this.y - this.radius, // 공 위치 Y
+    imageSize, // 공 크기에 맞춘 이미지 너비
+    imageSize // 공 크기에 맞춘 이미지 높이
+  );
+};
+
+Capybara.prototype.update = function (currentTime) {
+  if (this.isDragging) {
+    this.color = "green";
+    return; // 드래그 중일 때는 위치를 업데이트하지 않음
+  } else if (this.isFalling) {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // 이전 프레임 지우기
+
+    this.color = "blue";
+
+    // 중력 적용하여 아래로 떨어짐
+    this.y += this.speed;
+
+    if (this.y + this.radius >= this.canvas.height) {
+      this.isFalling = false;
+      this.isMoving = true;
+      this.isMouseOn = false;
+      this.y = this.canvas.height;
+
+      // dx를 랜덤하게 설정 (음수 또는 양수)
+      this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
+    } else {
+      this.speed += this.gravity;
+    }
+
+    this.draw();
+  } else if (this.isMouseOn) {
+    this.color = "yellow";
+    this.draw();
+  } else if (this.isMoving) {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // 이전 프레임 지우기
+
+    this.color = "transparent";
+
+    // 공의 위치 업데이트
+    this.y = this.canvas.height - this.radius;
+    this.x += this.dx;
+
+    if (this.x > this.canvas.width) {
+      this.dx = -0.5;
+    }
+    if (this.x < 0) {
+      this.dx = 0.5;
+    }
+
+    // 프레임 변경 로직
+    if (currentTime - this.lastFrameTime >= this.frameDuration) {
+      this.currentFrame = (this.currentFrame + 1) % this.frameCount; // 프레임 변경
+      this.lastFrameTime = currentTime; // 현재 시간을 마지막 프레임 시간으로 업데이트
+    }
+
+    this.draw();
+  }
+
+  // 애니메이션을 다시 요청
+  requestAnimationFrame(this.update.bind(this));
+};
