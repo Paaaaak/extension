@@ -109,7 +109,7 @@
         capybara.x = e.clientX - capybara.offsetX;
         capybara.y = e.clientY - capybara.offsetY;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        capybara.draw();
+        capybara.animate();
       }
     });
 
@@ -132,6 +132,10 @@
         capybara.update();
       }
     });
+
+    window.addEventListener("resize", function () {
+      capybara.resize();
+    });
   }
 })();
 
@@ -149,19 +153,17 @@ var Capybara = function (x, y, radius, color, speed, ctx, canvas, images) {
   this.isMouseOn = false;
   this.offsetX = 0;
   this.offsetY = 0;
-
   this.currentFrame = 0; // 현재 프레임 변수 추가
   this.frameCount = 8; // 스프라이트의 총 프레임 수
   this.frameWidth = images[0].width / this.frameCount; // 프레임 너비 계산
   this.lastFrameTime = 0; // 마지막 프레임 시간
   this.frameDuration = 50; // 프레임 변경 시간 (밀리초)
-
   this.ctx = ctx;
   this.canvas = canvas;
   this.images = images;
 };
 
-Capybara.prototype.draw = function () {
+Capybara.prototype.animate = function () {
   this.ctx.beginPath();
   this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
   this.ctx.fillStyle = this.color;
@@ -211,10 +213,10 @@ Capybara.prototype.update = function (currentTime) {
       this.speed += this.gravity;
     }
 
-    this.draw();
+    this.animate();
   } else if (this.isMouseOn) {
     this.color = "yellow";
-    this.draw();
+    this.animate();
   } else if (this.isMoving) {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); // 이전 프레임 지우기
 
@@ -237,9 +239,14 @@ Capybara.prototype.update = function (currentTime) {
       this.lastFrameTime = currentTime; // 현재 시간을 마지막 프레임 시간으로 업데이트
     }
 
-    this.draw();
+    this.animate();
   }
 
   // 애니메이션을 다시 요청
   requestAnimationFrame(this.update.bind(this));
+};
+
+Capybara.prototype.resize = function () {
+  this.canvas.width = window.innerWidth;
+  this.canvas.height = window.innerHeight;
 };
