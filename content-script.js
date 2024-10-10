@@ -28,42 +28,36 @@
 
   const ctx = canvas.getContext("2d");
 
-  // 이미지 로드
-  const rightImage = new Image();
-  rightImage.src = chrome.runtime.getURL("sheep-right.png"); // 오른쪽 이미지 경로 설정
+  // 이미지 로드 함수
+  function loadImage(src) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => resolve(img);
+    });
+  }
 
-  const leftImage = new Image();
-  leftImage.src = chrome.runtime.getURL("sheep-left.png"); // 왼쪽 이미지 경로 설정
+  const rightImageSrc = chrome.runtime.getURL("sheep-right.png");
+  const leftImageSrc = chrome.runtime.getURL("sheep-left.png");
 
-  // 이미지가 두 개 다 로드되었을 때 애니메이션 시작
-  let imagesLoaded = 0;
+  Promise.all([loadImage(rightImageSrc), loadImage(leftImageSrc)])
+    .then((images) => {
+      startAnimation(images);
+    })
+    .catch((error) => {
+      console.error("이미지 로드 오류:", error);
+    });
 
-  rightImage.onload = () => {
-    imagesLoaded++;
-    if (imagesLoaded === 2) {
-      startAnimation(); // 두 이미지 모두 로드된 후 애니메이션 시작
-    }
-  };
-
-  leftImage.onload = () => {
-    imagesLoaded++;
-    if (imagesLoaded === 2) {
-      startAnimation(); // 두 이미지 모두 로드된 후 애니메이션 시작
-    }
-  };
-
-  function startAnimation() {
+  function startAnimation(images) {
     const capybara = new Capybara(
-      canvas.width * Math.random(), // 공의 초기 X 좌표
-      canvas.height, // 공의 초기 Y 좌표
+      canvas.width * Math.random(),
+      canvas.height,
       30, // 반지름
       "red", // 색상
       1, // 속도
-      0.5, // X축 이동 속도
-      0.1, // 중력 값
       ctx,
       canvas,
-      [rightImage, leftImage]
+      images
     );
 
     // 애니메이션 시작
@@ -141,25 +135,14 @@
   }
 })();
 
-var Capybara = function (
-  x,
-  y,
-  radius,
-  color,
-  speed,
-  dx,
-  gravity,
-  ctx,
-  canvas,
-  images
-) {
+var Capybara = function (x, y, radius, color, speed, ctx, canvas, images) {
   this.x = x;
   this.y = y;
   this.radius = radius;
   this.color = color;
   this.speed = speed;
   this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
-  this.gravity = gravity;
+  this.gravity = 0.1;
   this.isMoving = true;
   this.isDragging = false;
   this.isFalling = false;
@@ -216,14 +199,14 @@ Capybara.prototype.update = function (currentTime) {
     // 중력 적용하여 아래로 떨어짐
     this.y += this.speed;
 
+    // 땅에 닿았을 경우
     if (this.y + this.radius >= this.canvas.height) {
       this.isFalling = false;
       this.isMoving = true;
       this.isMouseOn = false;
       this.y = this.canvas.height;
 
-      // dx를 랜덤하게 설정 (음수 또는 양수)
-      this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
+      this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
     } else {
       this.speed += this.gravity;
     }
