@@ -269,14 +269,16 @@ Capybara.prototype.update = function (currentTime) {
     this.animate();
   } else if (this.isShowUp) {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    console.log("popup");
+    console.log("popup", this.y);
     this.y = this.canvas.height - this.radius;
     this.color = "purple";
+    this.animate();
     if (!this.fallTimeout) {
       this.fallTimeout = setTimeout(() => {
         console.log("popup222");
         this.isShowUp = false;
         this.setRandomState();
+        this.fallTimeout = null;
       }, 1500);
     }
   } else if (this.isMouseOn) {
