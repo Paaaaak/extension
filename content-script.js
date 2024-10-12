@@ -37,10 +37,12 @@
     });
   }
 
-  const rightImageSrc = chrome.runtime.getURL("sheep-right.png");
-  const leftImageSrc = chrome.runtime.getURL("sheep-left.png");
+  const rightImageSrc = chrome.runtime.getURL("capybara-walking-right.png");
+  const leftImageSrc = chrome.runtime.getURL("capybara-walking-left.png");
+  const sittingLeftSrc = chrome.runtime.getURL("sitting-left.png");
+  const sittingRightSrc = chrome.runtime.getURL("sitting-right.png");
 
-  Promise.all([loadImage(rightImageSrc), loadImage(leftImageSrc)])
+  Promise.all([loadImage(rightImageSrc), loadImage(leftImageSrc), loadImage(sittingRightSrc), loadImage(sittingLeftSrc)])
     .then((images) => {
       startAnimation(images);
     })
@@ -52,7 +54,7 @@
     const capybara = new Capybara(
       canvas.width * Math.random(),
       canvas.height,
-      30, // 반지름
+      45, // 반지름
       "red", // 색상
       1, // 속도
       ctx,
@@ -153,10 +155,10 @@ var Capybara = function (x, y, radius, color, speed, ctx, canvas, images) {
   this.radius = radius;
   this.color = color;
   this.speed = speed;
-  this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
+  this.dx = Math.random() < 0.5 ? -0.18 : 0.18; // 50% 확률로 음수 또는 양수
   this.gravity = 0.9;
   this.isMoving = false;
-  this.isSleeping = false; // 추가: 초기 상태는 sleeping 아님
+  this.isSitting = false; // 추가: 초기 상태는 sitting 아님
   this.isDragging = false;
 
   this.isFallingFromHigh = false;
@@ -167,14 +169,14 @@ var Capybara = function (x, y, radius, color, speed, ctx, canvas, images) {
   this.offsetX = 0;
   this.offsetY = 0;
   this.currentFrame = 0;
-  this.frameCount = 8;
+  this.frameCount = 7;
   this.frameWidth = images[0].width / this.frameCount;
   this.lastFrameTime = 0;
-  this.frameDuration = 50;
+  this.frameDuration = 100;
   this.ctx = ctx;
   this.canvas = canvas;
   this.images = images;
-  this.randomState = "sleeping"; // 초기 상태는 sleeping
+  this.randomState = "sitting"; // 초기 상태는 sitting
   this.nextStateChange = 0; // 다음 상태 변경 시간
 
   // 상태 전환을 위한 타이머 설정
@@ -182,36 +184,43 @@ var Capybara = function (x, y, radius, color, speed, ctx, canvas, images) {
 };
 
 Capybara.prototype.setRandomState = function () {
-  const minTime = 5000; // 5초
-  const maxTime = 20000; // 20초
-  const randomTime = Math.random() * (maxTime - minTime) + minTime;
+  let randomTime;
 
-  if (this.randomState === "sleeping") {
-    this.randomState = "moving"; // sleeping 후 moving으로 전환
-    this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
+  if (this.randomState === "sitting") {
+    this.randomState = "moving"; // sitting 후 moving으로 전환
+    this.dx = Math.random() < 0.5 ? -0.18 : 0.18;
+    randomTime = 5000;
   } else {
-    this.randomState = "sleeping"; // moving 후 sleeping으로 전환
+    this.randomState = "sitting"; // moving 후 sitting으로 전환
+    randomTime = 5000;
   }
 
   // 다음 상태 변경 타이머 설정
   this.nextStateChange = Date.now() + randomTime;
 };
 
-Capybara.prototype.animate = function () {
+Capybara.prototype.animate = function (status = null) {
   this.ctx.beginPath();
   this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
   this.ctx.fillStyle = this.color;
   this.ctx.fill();
   this.ctx.closePath();
 
-  const imageToDraw = this.dx > 0 ? this.images[0] : this.images[1];
+  let imageToDraw;
+
+  if (status === "sitting") {
+    imageToDraw = this.dx > 0 ? this.images[2] : this.images[3];
+  } else {
+
+    imageToDraw = this.dx > 0 ? this.images[0] : this.images[1];
+  }
   const imageSize = this.radius * 2;
 
   this.ctx.drawImage(
     imageToDraw,
-    this.currentFrame * this.frameWidth,
+    this.currentFrame * (imageToDraw.width / this.frameCount),
     0,
-    this.frameWidth,
+    imageToDraw.width / this.frameCount,
     imageToDraw.height,
     this.x - this.radius,
     this.y - this.radius,
@@ -260,7 +269,7 @@ Capybara.prototype.update = function (currentTime) {
         this.isFalling = false;
         this.isMouseOn = false;
         this.isMoving = true;
-        this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
+        this.dx = Math.random() < 0.5 ? -0.18 : 0.18;
       }
     } else {
       this.speed += this.gravity;
@@ -269,13 +278,11 @@ Capybara.prototype.update = function (currentTime) {
     this.animate();
   } else if (this.isShowUp) {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    console.log("popup", this.y);
     this.y = this.canvas.height - this.radius;
     this.color = "purple";
     this.animate();
     if (!this.fallTimeout) {
       this.fallTimeout = setTimeout(() => {
-        console.log("popup222");
         this.isShowUp = false;
         this.setRandomState();
         this.fallTimeout = null;
@@ -291,10 +298,10 @@ Capybara.prototype.update = function (currentTime) {
     this.x += this.dx;
 
     if (this.x > this.canvas.width) {
-      this.dx = -0.5;
+      this.dx = -0.18;
     }
     if (this.x < 0) {
-      this.dx = 0.5;
+      this.dx = 0.18;
     }
 
     if (currentTime - this.lastFrameTime >= this.frameDuration) {
@@ -303,9 +310,17 @@ Capybara.prototype.update = function (currentTime) {
     }
 
     this.animate();
-  } else if (this.randomState === "sleeping") {
-    this.color = "gray"; // sleeping 중일 때 색상
-    this.animate();
+  } else if (this.randomState === "sitting") {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    this.frameDuration = 200;
+
+    if (currentTime - this.lastFrameTime >= this.frameDuration) {
+      this.currentFrame = (this.currentFrame + 1) % this.frameCount;
+      this.lastFrameTime = currentTime;
+    }
+    
+    this.animate("sitting");
   }
 
   // 상태 전환
