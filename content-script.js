@@ -43,8 +43,19 @@ window.addEventListener("load", function () {
   const sittingRightSrc = chrome.runtime.getURL("sitting-right.png");
   const sleepingLeftSrc = chrome.runtime.getURL("sleeping-left.png");
   const sleepingRightSrc = chrome.runtime.getURL("sleeping-right.png");
+  const sittingTransitionLeftSrc = chrome.runtime.getURL("capybara-sitting-transition-left.png");
+  const sittingTransitionRightSrc = chrome.runtime.getURL("sitting-transition-right.png");
 
-  Promise.all([loadImage(rightImageSrc), loadImage(leftImageSrc), loadImage(sittingRightSrc), loadImage(sittingLeftSrc), loadImage(sleepingRightSrc), loadImage(sleepingLeftSrc)])
+  Promise.all([
+    loadImage(rightImageSrc),
+    loadImage(leftImageSrc),
+    loadImage(sittingRightSrc),
+    loadImage(sittingLeftSrc),
+    loadImage(sleepingRightSrc),
+    loadImage(sleepingLeftSrc),
+    loadImage(sittingTransitionRightSrc),
+    loadImage(sittingTransitionLeftSrc),
+  ])
     .then((images) => {
       startAnimation(images);
     })
@@ -179,10 +190,10 @@ var Capybara = function (x, y, radius, color, speed, ctx, canvas, images) {
   this.canvas = canvas;
   this.images = images;
   this.randomState = "moving"; // 초기 상태는 sitting
-  this.nextStateChange = 0; // 다음 상태 변경 시간
+  this.nextStateChange = 4000; // 다음 상태 변경 시간
 
   // 상태 전환을 위한 타이머 설정
-  this.setRandomState();
+  // this.setRandomState();
 };
 
 Capybara.prototype.setRandomState = function () {
@@ -195,9 +206,12 @@ Capybara.prototype.setRandomState = function () {
       this.dx = Math.random() < 0.5 ? -0.12 : 0.12;
       randomTime = 5000;
     } else {
-      this.randomState = "sitting";
-      randomTime = 5000;
+      this.randomState = "sitting-transition";
+      randomTime = 666;
     }
+  } else if (this.randomState === "sitting-transition") {
+    this.randomState = "sitting";
+    randomTime = 5000;
   } else if (this.randomState === "sitting") {
     const randomValue = Math.random();
     if (randomValue < 0.3) {
@@ -209,7 +223,7 @@ Capybara.prototype.setRandomState = function () {
       randomTime = 5000;
     } else {
       this.randomState = "sleeping";
-      randomTime = 7000; 
+      randomTime = 7000;
     }
   } else if (this.randomState === "sleeping") {
     const randomValue = Math.random();
@@ -218,11 +232,11 @@ Capybara.prototype.setRandomState = function () {
       randomTime = 5000;
     } else {
       this.randomState = "sleeping";
-      randomTime = 7000; 
+      randomTime = 7000;
     }
   }
 
-  console.log('random state', this.randomState)
+  console.log("random state", this.randomState);
 
   // 다음 상태 변경 타이머 설정
   this.nextStateChange = Date.now() + randomTime;
@@ -257,6 +271,10 @@ Capybara.prototype.getImageByStatus = function (status) {
     return this.dx > 0 ? this.images[2] : this.images[3];
   } else if (status === "sleeping") {
     return this.dx > 0 ? this.images[4] : this.images[5];
+  } else if (status === "moving") {
+    return this.dx > 0 ? this.images[0] : this.images[1];
+  } else if (status === "sitting-transition") {
+    return this.dx > 0 ? this.images[6] : this.images[7];
   } else {
     return this.dx > 0 ? this.images[0] : this.images[1];
   }
@@ -299,7 +317,7 @@ Capybara.prototype.handleFallingFromHigh = function () {
   this.y += this.speed;
   this.speed += this.gravity;
   this.draw();
-  
+
   if (this.y > this.canvas.height + 200 && !this.fallTimeout) {
     this.fallTimeout = setTimeout(() => {
       this.isFallingFromHigh = false;
@@ -313,7 +331,7 @@ Capybara.prototype.handleFalling = function () {
   this.clearCanvas();
   this.color = "blue";
   this.y += this.speed;
-  
+
   if (this.y + this.radius >= this.canvas.height) {
     this.y = this.canvas.height - this.radius;
     this.speed = -this.speed * 0.4;
@@ -334,7 +352,7 @@ Capybara.prototype.handleShowUp = function () {
   this.y = this.canvas.height - this.radius;
   this.color = "purple";
   this.draw();
-  
+
   if (!this.fallTimeout) {
     this.fallTimeout = setTimeout(() => {
       this.isShowUp = false;
@@ -349,7 +367,7 @@ Capybara.prototype.handleRandomState = function (currentTime) {
   this.clearCanvas();
   this.y = this.canvas.height - this.radius;
   this.color = "transparent";
-  
+
   if (this.randomState === "moving") {
     this.x += this.dx;
     if (this.x > this.canvas.width || this.x < 0) {
@@ -357,6 +375,9 @@ Capybara.prototype.handleRandomState = function (currentTime) {
     }
     this.updateFrame(currentTime, 100);
     this.draw("moving");
+  } else if (this.randomState === "sitting-transition") {
+    this.updateFrame(currentTime, 100);
+    this.draw("sitting-transition");
   } else if (this.randomState === "sitting") {
     this.updateFrame(currentTime, 200);
     this.draw("sitting");
