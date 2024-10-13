@@ -1,4 +1,4 @@
-(function () {
+window.addEventListener("load", function () {
   const canvasId = "backgroundCanvas";
   const existingCanvas = document.getElementById(canvasId);
 
@@ -113,7 +113,7 @@
         capybara.x = e.clientX - capybara.offsetX;
         capybara.y = e.clientY - capybara.offsetY;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        capybara.animate();
+        capybara.draw();
       }
     });
 
@@ -149,7 +149,7 @@
       capybara.resize();
     });
   }
-})();
+});
 
 var Capybara = function (x, y, radius, color, speed, ctx, canvas, images) {
   this.x = x;
@@ -228,22 +228,14 @@ Capybara.prototype.setRandomState = function () {
   this.nextStateChange = Date.now() + randomTime;
 };
 
-Capybara.prototype.animate = function (status = null) {
+Capybara.prototype.draw = function (status = null) {
   this.ctx.beginPath();
   this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
   this.ctx.fillStyle = this.color;
   this.ctx.fill();
   this.ctx.closePath();
 
-  let imageToDraw;
-
-  if (status === "sitting") {
-    imageToDraw = this.dx > 0 ? this.images[2] : this.images[3];
-  } else if (status === "sleeping") {
-    imageToDraw = this.dx > 0 ? this.images[4] : this.images[5];
-  } else {
-    imageToDraw = this.dx > 0 ? this.images[0] : this.images[1];
-  }
+  let imageToDraw = this.getImageByStatus(status);
   const imageSize = this.radius * 2;
 
   this.ctx.drawImage(
@@ -259,121 +251,126 @@ Capybara.prototype.animate = function (status = null) {
   );
 };
 
-Capybara.prototype.update = function (currentTime) {
+// 상태에 따른 이미지 선택 로직 분리
+Capybara.prototype.getImageByStatus = function (status) {
+  if (status === "sitting") {
+    return this.dx > 0 ? this.images[2] : this.images[3];
+  } else if (status === "sleeping") {
+    return this.dx > 0 ? this.images[4] : this.images[5];
+  } else {
+    return this.dx > 0 ? this.images[0] : this.images[1];
+  }
+};
+
+// 공통 프레임 업데이트 로직
+Capybara.prototype.updateFrame = function (currentTime, frameDuration) {
+  if (currentTime - this.lastFrameTime >= frameDuration) {
+    this.currentFrame = (this.currentFrame + 1) % this.frameCount;
+    this.lastFrameTime = currentTime;
+  }
+};
+
+// 캔버스 초기화
+Capybara.prototype.clearCanvas = function () {
+  this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+};
+
+// 상태별 업데이트 로직 분리
+Capybara.prototype.handleState = function (currentTime) {
   if (this.isDragging) {
     this.color = "green";
-    return;
   } else if (this.isFallingFromHigh) {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.color = "blue";
-
-    this.y += this.speed;
-    this.speed += this.gravity;
-    this.animate();
-
-    // 화면 하단으로 사라진 경우
-    if (this.y > this.canvas.height + 200) {
-      console.log("under the sea");
-
-      // 1.5초 후 setRandomState 호출
-      if (!this.fallTimeout) {
-        this.fallTimeout = setTimeout(() => {
-          this.isFallingFromHigh = false;
-          this.isMouseOn = false;
-          this.isShowUp = true;
-          this.y = this.canvas.height - this.radius;
-          this.fallTimeout = null; // timeout 초기화
-        }, 1500);
-      }
-    }
+    this.handleFallingFromHigh();
   } else if (this.isFalling) {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.color = "blue";
-
-    this.y += this.speed;
-
-    if (this.y + this.radius >= this.canvas.height) {
-      this.y = this.canvas.height - this.radius;
-      this.speed = -this.speed * 0.4;
-      if (Math.abs(this.speed) < 1.5) {
-        this.isFalling = false;
-        this.isMouseOn = false;
-        this.isMoving = true;
-        this.dx = Math.random() < 0.5 ? -0.12 : 0.12;
-      }
-    } else {
-      this.speed += this.gravity;
-    }
-
-    this.animate();
+    this.handleFalling();
   } else if (this.isShowUp) {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.y = this.canvas.height - this.radius;
-    this.color = "purple";
-    this.animate();
-    if (!this.fallTimeout) {
-      this.fallTimeout = setTimeout(() => {
-        this.isShowUp = false;
-        this.setRandomState();
-        this.fallTimeout = null;
-      }, 1500);
-    }
+    this.handleShowUp();
   } else if (this.isMouseOn) {
     this.color = "yellow";
-    this.animate();
-  } else if (this.randomState === "moving") {
-    console.log('update')
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.color = "transparent";
-    this.y = this.canvas.height - this.radius;
-    this.x += this.dx;
-
-    if (this.x > this.canvas.width) {
-      this.dx = -0.12;
-    }
-    if (this.x < 0) {
-      this.dx = 0.12;
-    }
-
-    this.frameDuration = 100;
-
-    if (currentTime - this.lastFrameTime >= this.frameDuration) {
-      this.currentFrame = (this.currentFrame + 1) % this.frameCount;
-      this.lastFrameTime = currentTime;
-    }
-
-    this.animate("moving");
-  } else if (this.randomState === "sitting") {
-    console.log('update1')
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.color = "transparent";
-    this.y = this.canvas.height - this.radius;
-
-    this.frameDuration = 200;
-
-    if (currentTime - this.lastFrameTime >= this.frameDuration) {
-      this.currentFrame = (this.currentFrame + 1) % this.frameCount;
-      this.lastFrameTime = currentTime;
-    }
-    
-    this.animate("sitting");
-  } else if (this.randomState === "sleeping") {
-    console.log('update2')
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.color = "transparent";
-    this.y = this.canvas.height - this.radius;
-
-    this.frameDuration = 300;
-
-    if (currentTime - this.lastFrameTime >= this.frameDuration) {
-      this.currentFrame = (this.currentFrame + 1) % this.frameCount;
-      this.lastFrameTime = currentTime;
-    }
-    
-    this.animate("sleeping");
+  } else {
+    this.handleRandomState(currentTime);
   }
+};
 
-  // 상태 전환
+// 상태별 처리 로직 리팩토링
+Capybara.prototype.handleFallingFromHigh = function () {
+  this.clearCanvas();
+  this.color = "blue";
+  this.y += this.speed;
+  this.speed += this.gravity;
+  this.draw();
+  
+  if (this.y > this.canvas.height + 200 && !this.fallTimeout) {
+    this.fallTimeout = setTimeout(() => {
+      this.isFallingFromHigh = false;
+      this.isShowUp = true;
+      this.fallTimeout = null;
+    }, 1500);
+  }
+};
+
+Capybara.prototype.handleFalling = function () {
+  this.clearCanvas();
+  this.color = "blue";
+  this.y += this.speed;
+  
+  if (this.y + this.radius >= this.canvas.height) {
+    this.y = this.canvas.height - this.radius;
+    this.speed = -this.speed * 0.4;
+    if (Math.abs(this.speed) < 1.5) {
+      this.isFalling = false;
+      this.isMouseOn = false;
+      this.isMoving = true;
+      this.dx = Math.random() < 0.5 ? -0.12 : 0.12;
+    }
+  } else {
+    this.speed += this.gravity;
+  }
+  this.draw();
+};
+
+Capybara.prototype.handleShowUp = function () {
+  this.clearCanvas();
+  this.y = this.canvas.height - this.radius;
+  this.color = "purple";
+  this.draw();
+  
+  if (!this.fallTimeout) {
+    this.fallTimeout = setTimeout(() => {
+      this.isShowUp = false;
+      this.setRandomState();
+      this.fallTimeout = null;
+      this.draw();
+    }, 1500);
+  }
+};
+
+Capybara.prototype.handleRandomState = function (currentTime) {
+  this.clearCanvas();
+  this.y = this.canvas.height - this.radius;
+  this.color = "transparent";
+  
+  if (this.randomState === "moving") {
+    this.x += this.dx;
+    if (this.x > this.canvas.width || this.x < 0) {
+      this.dx = this.x > this.canvas.width ? -0.12 : 0.12;
+    }
+    this.updateFrame(currentTime, 100);
+    this.draw("moving");
+  } else if (this.randomState === "sitting") {
+    this.updateFrame(currentTime, 200);
+    this.draw("sitting");
+  } else if (this.randomState === "sleeping") {
+    this.updateFrame(currentTime, 300);
+    this.draw("sleeping");
+  }
+};
+
+// 메인 업데이트 함수
+Capybara.prototype.update = function (currentTime) {
+  this.handleState(currentTime);
+
+  // 상태 전환 타이머
   if (Date.now() >= this.nextStateChange) {
     this.setRandomState();
   }
