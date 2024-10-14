@@ -49,6 +49,12 @@ window.addEventListener("load", function () {
   const sittingTransitionRightSrc = chrome.runtime.getURL(
     "sitting-transition-r.png"
   );
+  const movingTransitionLeftSrc = chrome.runtime.getURL(
+    "moving-transition-l.png"
+  );
+  const movingTransitionRightSrc = chrome.runtime.getURL(
+    "moving-transition-r.png"
+  );
 
   Promise.all([
     loadImage(rightImageSrc),
@@ -59,6 +65,8 @@ window.addEventListener("load", function () {
     loadImage(sleepingLeftSrc),
     loadImage(sittingTransitionRightSrc),
     loadImage(sittingTransitionLeftSrc),
+    loadImage(movingTransitionRightSrc),
+    loadImage(movingTransitionLeftSrc),
   ])
     .then((images) => {
       startAnimation(images);
@@ -195,9 +203,6 @@ var Capybara = function (x, y, radius, color, speed, ctx, canvas, images) {
   this.images = images;
   this.randomState = "moving"; // 초기 상태는 sitting
   this.nextStateChange = 4000; // 다음 상태 변경 시간
-
-  // 상태 전환을 위한 타이머 설정
-  // this.setRandomState();
 };
 
 Capybara.prototype.setRandomState = function () {
@@ -213,7 +218,7 @@ Capybara.prototype.setRandomState = function () {
       // 상태가 변경될 때 프레임을 초기화
       this.currentFrame = 0;
       this.randomState = "sitting-transition";
-      randomTime = 600;
+      randomTime = 480;
     }
   } else if (this.randomState === "sitting-transition") {
     this.randomState = "sitting";
@@ -221,9 +226,10 @@ Capybara.prototype.setRandomState = function () {
   } else if (this.randomState === "sitting") {
     const randomValue = Math.random();
     if (randomValue < 0.3) {
-      this.randomState = "moving";
-      this.dx = Math.random() < 0.5 ? -0.12 : 0.12;
-      randomTime = 5000;
+      // 상태가 변경될 때 프레임을 초기화
+      this.currentFrame = 0;
+      this.randomState = "moving-transition";
+      randomTime = 480;
     } else if (randomValue < 0.3) {
       this.randomState = "sitting";
       randomTime = 5000;
@@ -231,6 +237,10 @@ Capybara.prototype.setRandomState = function () {
       this.randomState = "sleeping";
       randomTime = 7000;
     }
+  } else if (this.randomState === "moving-transition") {
+    this.randomState = "moving";
+    this.dx = Math.random() < 0.5 ? -0.12 : 0.12;
+    randomTime = 5000;
   } else if (this.randomState === "sleeping") {
     const randomValue = Math.random();
     if (randomValue < 0.5) {
@@ -273,14 +283,16 @@ Capybara.prototype.draw = function (status = null) {
 
 // 상태에 따른 이미지 선택 로직 분리
 Capybara.prototype.getImageByStatus = function (status) {
-  if (status === "sitting") {
+  if (status === "moving") {
+    return this.dx > 0 ? this.images[0] : this.images[1];
+  } else if (status === "sitting") {
     return this.dx > 0 ? this.images[2] : this.images[3];
   } else if (status === "sleeping") {
     return this.dx > 0 ? this.images[4] : this.images[5];
-  } else if (status === "moving") {
-    return this.dx > 0 ? this.images[0] : this.images[1];
   } else if (status === "sitting-transition") {
     return this.dx > 0 ? this.images[6] : this.images[7];
+  } else if (status === "moving-transition") {
+    return this.dx > 0 ? this.images[8] : this.images[9];
   } else {
     return this.dx > 0 ? this.images[0] : this.images[1];
   }
@@ -383,8 +395,11 @@ Capybara.prototype.handleRandomState = function (currentTime) {
     this.updateFrame(currentTime, 100);
     this.draw("moving");
   } else if (this.randomState === "sitting-transition") {
-    this.updateFrame(currentTime, 100);
+    this.updateFrame(currentTime, 80);
     this.draw("sitting-transition");
+  } else if (this.randomState === "moving-transition") {
+    this.updateFrame(currentTime, 80);
+    this.draw("moving-transition");
   } else if (this.randomState === "sitting") {
     this.updateFrame(currentTime, 200);
     this.draw("sitting");
