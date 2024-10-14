@@ -37,14 +37,18 @@ window.addEventListener("load", function () {
     });
   }
 
-  const rightImageSrc = chrome.runtime.getURL("capybara-walking-right.png");
-  const leftImageSrc = chrome.runtime.getURL("capybara-walking-left.png");
-  const sittingLeftSrc = chrome.runtime.getURL("sitting-left.png");
-  const sittingRightSrc = chrome.runtime.getURL("sitting-right.png");
-  const sleepingLeftSrc = chrome.runtime.getURL("sleeping-left.png");
-  const sleepingRightSrc = chrome.runtime.getURL("sleeping-right.png");
-  const sittingTransitionLeftSrc = chrome.runtime.getURL("capybara-sitting-transition-left.png");
-  const sittingTransitionRightSrc = chrome.runtime.getURL("sitting-transition-right.png");
+  const rightImageSrc = chrome.runtime.getURL("walking-r.png");
+  const leftImageSrc = chrome.runtime.getURL("walking-l.png");
+  const sittingLeftSrc = chrome.runtime.getURL("sitting-l.png");
+  const sittingRightSrc = chrome.runtime.getURL("sitting-r.png");
+  const sleepingLeftSrc = chrome.runtime.getURL("sleeping-l.png");
+  const sleepingRightSrc = chrome.runtime.getURL("sleeping-r.png");
+  const sittingTransitionLeftSrc = chrome.runtime.getURL(
+    "sitting-transition-l.png"
+  );
+  const sittingTransitionRightSrc = chrome.runtime.getURL(
+    "sitting-transition-r.png"
+  );
 
   Promise.all([
     loadImage(rightImageSrc),
@@ -206,8 +210,10 @@ Capybara.prototype.setRandomState = function () {
       this.dx = Math.random() < 0.5 ? -0.12 : 0.12;
       randomTime = 5000;
     } else {
+      // 상태가 변경될 때 프레임을 초기화
+      this.currentFrame = 0;
       this.randomState = "sitting-transition";
-      randomTime = 666;
+      randomTime = 600;
     }
   } else if (this.randomState === "sitting-transition") {
     this.randomState = "sitting";
@@ -236,7 +242,7 @@ Capybara.prototype.setRandomState = function () {
     }
   }
 
-  console.log("random state", this.randomState);
+  console.log("state:", this.randomState, Date.now());
 
   // 다음 상태 변경 타이머 설정
   this.nextStateChange = Date.now() + randomTime;
@@ -284,6 +290,7 @@ Capybara.prototype.getImageByStatus = function (status) {
 Capybara.prototype.updateFrame = function (currentTime, frameDuration) {
   if (currentTime - this.lastFrameTime >= frameDuration) {
     this.currentFrame = (this.currentFrame + 1) % this.frameCount;
+    console.log(this.randomState, this.currentFrame);
     this.lastFrameTime = currentTime;
   }
 };
