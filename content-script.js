@@ -55,6 +55,12 @@ window.addEventListener("load", function () {
   const movingTransitionRightSrc = chrome.runtime.getURL(
     "moving-transition-r.png"
   );
+  const sleepingTransitionLeftSrc = chrome.runtime.getURL(
+    "sleeping-transition-l.png"
+  );
+  const sleepingTransitionRightSrc = chrome.runtime.getURL(
+    "sleeping-transition-r.png"
+  );
 
   Promise.all([
     loadImage(rightImageSrc),
@@ -67,6 +73,8 @@ window.addEventListener("load", function () {
     loadImage(sittingTransitionLeftSrc),
     loadImage(movingTransitionRightSrc),
     loadImage(movingTransitionLeftSrc),
+    loadImage(sleepingTransitionRightSrc),
+    loadImage(sleepingTransitionLeftSrc),
   ])
     .then((images) => {
       startAnimation(images);
@@ -234,9 +242,13 @@ Capybara.prototype.setRandomState = function () {
       this.randomState = "sitting";
       randomTime = 5000;
     } else {
-      this.randomState = "sleeping";
-      randomTime = 7000;
+      this.currentFrame = 0;
+      this.randomState = "sleeping-transition";
+      randomTime = 480;
     }
+  } else if (this.randomState === "sleeping-transition") {
+    this.randomState = "sleeping";
+    randomTime = 7000;
   } else if (this.randomState === "moving-transition") {
     this.randomState = "moving";
     this.dx = Math.random() < 0.5 ? -0.12 : 0.12;
@@ -293,6 +305,8 @@ Capybara.prototype.getImageByStatus = function (status) {
     return this.dx > 0 ? this.images[6] : this.images[7];
   } else if (status === "moving-transition") {
     return this.dx > 0 ? this.images[8] : this.images[9];
+  } else if (status === "sleeping-transition") {
+    return this.dx > 0 ? this.images[10] : this.images[11];
   } else {
     return this.dx > 0 ? this.images[0] : this.images[1];
   }
@@ -400,6 +414,9 @@ Capybara.prototype.handleRandomState = function (currentTime) {
   } else if (this.randomState === "moving-transition") {
     this.updateFrame(currentTime, 80);
     this.draw("moving-transition");
+  } else if (this.randomState === "sleeping-transition") {
+    this.updateFrame(currentTime, 80);
+    this.draw("sleeping-transition");
   } else if (this.randomState === "sitting") {
     this.updateFrame(currentTime, 200);
     this.draw("sitting");
