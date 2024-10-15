@@ -37,58 +37,34 @@ window.addEventListener("load", function () {
     });
   }
 
-  const rightImageSrc = chrome.runtime.getURL("walking-r.png");
-  const leftImageSrc = chrome.runtime.getURL("walking-l.png");
-  const sittingLeftSrc = chrome.runtime.getURL("sitting-l.png");
-  const sittingRightSrc = chrome.runtime.getURL("sitting-r.png");
-  const sleepingLeftSrc = chrome.runtime.getURL("sleeping-l.png");
-  const sleepingRightSrc = chrome.runtime.getURL("sleeping-r.png");
-  const sittingTransitionLeftSrc = chrome.runtime.getURL(
-    "sitting-transition-l.png"
-  );
-  const sittingTransitionRightSrc = chrome.runtime.getURL(
-    "sitting-transition-r.png"
-  );
-  const movingTransitionLeftSrc = chrome.runtime.getURL(
-    "moving-transition-l.png"
-  );
-  const movingTransitionRightSrc = chrome.runtime.getURL(
-    "moving-transition-r.png"
-  );
-  const sleepingTransitionLeftSrc = chrome.runtime.getURL(
-    "sleeping-transition-l.png"
-  );
-  const sleepingTransitionRightSrc = chrome.runtime.getURL(
-    "sleeping-transition-r.png"
-  );
-  const sleepingSittingTransitionLeftSrc = chrome.runtime.getURL(
-    "sleeping-sitting-transition-l.png"
-  );
-  const sleepingSittingTransitionRightSrc = chrome.runtime.getURL(
-    "sleeping-sitting-transition-r.png"
+  const imageSources = {
+    walkRight: chrome.runtime.getURL("walking-r.png"),
+    walkLeft: chrome.runtime.getURL("walking-l.png"),
+    sitRight: chrome.runtime.getURL("sitting-r.png"),
+    sitLeft: chrome.runtime.getURL("sitting-l.png"),
+    sleepRight: chrome.runtime.getURL("sleeping-r.png"),
+    sleepLeft: chrome.runtime.getURL("sleeping-l.png"),
+    moveToSitRight: chrome.runtime.getURL("sitting-transition-r.png"),
+    moveToSitLeft: chrome.runtime.getURL("sitting-transition-l.png"),
+    sitToMoveRight: chrome.runtime.getURL("moving-transition-r.png"),
+    sitToMoveLeft: chrome.runtime.getURL("moving-transition-l.png"),
+    sitToSleepRight: chrome.runtime.getURL("sleeping-transition-r.png"),
+    sitToSleepLeft: chrome.runtime.getURL("sleeping-transition-l.png"),
+    sleepToSitRight: chrome.runtime.getURL("sleeping-sitting-transition-r.png"),
+    sleepToSitLeft: chrome.runtime.getURL("sleeping-sitting-transition-l.png"),
+  };
+
+  // Load images using the image source values
+  const imagePromises = Object.values(imageSources).map((src) =>
+    loadImage(src)
   );
 
-  Promise.all([
-    loadImage(rightImageSrc),
-    loadImage(leftImageSrc),
-    loadImage(sittingRightSrc),
-    loadImage(sittingLeftSrc),
-    loadImage(sleepingRightSrc),
-    loadImage(sleepingLeftSrc),
-    loadImage(sittingTransitionRightSrc),
-    loadImage(sittingTransitionLeftSrc),
-    loadImage(movingTransitionRightSrc),
-    loadImage(movingTransitionLeftSrc),
-    loadImage(sleepingTransitionRightSrc),
-    loadImage(sleepingTransitionLeftSrc),
-    loadImage(sleepingSittingTransitionRightSrc),
-    loadImage(sleepingSittingTransitionLeftSrc),
-  ])
+  Promise.all(imagePromises)
     .then((images) => {
       startAnimation(images);
     })
     .catch((error) => {
-      console.error("이미지 로드 오류:", error);
+      console.error("Image load error:", error);
     });
 
   function startAnimation(images) {
@@ -100,7 +76,8 @@ window.addEventListener("load", function () {
       1, // 속도
       ctx,
       canvas,
-      images
+      images,
+      "moving"
     );
 
     // 애니메이션 시작
@@ -190,13 +167,23 @@ window.addEventListener("load", function () {
   }
 });
 
-var Capybara = function (x, y, radius, color, speed, ctx, canvas, images) {
+var Capybara = function (
+  x,
+  y,
+  radius,
+  color,
+  speed,
+  ctx,
+  canvas,
+  images,
+  randomState
+) {
   this.x = x;
   this.y = y;
   this.radius = radius;
   this.color = color;
   this.speed = speed;
-  this.dx = Math.random() < 0.5 ? -0.12 : 0.12; // 50% 확률로 음수 또는 양수
+  this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
   this.gravity = 0.9;
   this.isMoving = false;
   this.isSitting = false; // 추가: 초기 상태는 sitting 아님
@@ -217,22 +204,21 @@ var Capybara = function (x, y, radius, color, speed, ctx, canvas, images) {
   this.ctx = ctx;
   this.canvas = canvas;
   this.images = images;
-  this.randomState = "sleeping"; // 초기 상태는 sitting
+  this.randomState = randomState; // 초기 상태는 sitting
   this.nextStateChange = 4000; // 다음 상태 변경 시간
 };
 
 Capybara.prototype.setRandomState = function () {
   let randomTime;
+  this.currentFrame = 0;
 
   if (this.randomState === "moving") {
     const randomValue = Math.random();
     if (randomValue < 0.5) {
       this.randomState = "moving";
-      this.dx = Math.random() < 0.5 ? -0.12 : 0.12;
+      this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
       randomTime = 5000;
     } else {
-      // 상태가 변경될 때 프레임을 초기화
-      this.currentFrame = 0;
       this.randomState = "sitting-transition";
       randomTime = 480;
     }
@@ -242,15 +228,12 @@ Capybara.prototype.setRandomState = function () {
   } else if (this.randomState === "sitting") {
     const randomValue = Math.random();
     if (randomValue < 0.3) {
-      // 상태가 변경될 때 프레임을 초기화
-      this.currentFrame = 0;
       this.randomState = "moving-transition";
       randomTime = 480;
     } else if (randomValue < 0.3) {
       this.randomState = "sitting";
       randomTime = 5000;
     } else {
-      this.currentFrame = 0;
       this.randomState = "sleeping-transition";
       randomTime = 480;
     }
@@ -259,12 +242,11 @@ Capybara.prototype.setRandomState = function () {
     randomTime = 7000;
   } else if (this.randomState === "moving-transition") {
     this.randomState = "moving";
-    this.dx = Math.random() < 0.5 ? -0.12 : 0.12;
+    this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
     randomTime = 5000;
   } else if (this.randomState === "sleeping") {
     const randomValue = Math.random();
     if (randomValue < 0.5) {
-      this.currentFrame = 0;
       this.randomState = "sleeping-sitting-transition";
       randomTime = 480;
     } else {
@@ -276,7 +258,16 @@ Capybara.prototype.setRandomState = function () {
     randomTime = 5000;
   }
 
-  console.log("state:", this.randomState, Date.now());
+  function formatTimeFromDate() {
+    const now = new Date(Date.now());
+    const hours = now.getHours().toString().padStart(2, "0");
+    const minutes = now.getMinutes().toString().padStart(2, "0");
+    const seconds = now.getSeconds().toString().padStart(2, "0");
+
+    return `${hours}:${minutes}:${seconds}`;
+  }
+
+  console.log(formatTimeFromDate(), "state:", this.randomState);
 
   // 다음 상태 변경 타이머 설정
   this.nextStateChange = Date.now() + randomTime;
@@ -307,30 +298,27 @@ Capybara.prototype.draw = function (status = null) {
 
 // 상태에 따른 이미지 선택 로직 분리
 Capybara.prototype.getImageByStatus = function (status) {
-  if (status === "moving") {
-    return this.dx > 0 ? this.images[0] : this.images[1];
-  } else if (status === "sitting") {
-    return this.dx > 0 ? this.images[2] : this.images[3];
-  } else if (status === "sleeping") {
-    return this.dx > 0 ? this.images[4] : this.images[5];
-  } else if (status === "sitting-transition") {
-    return this.dx > 0 ? this.images[6] : this.images[7];
-  } else if (status === "moving-transition") {
-    return this.dx > 0 ? this.images[8] : this.images[9];
-  } else if (status === "sleeping-transition") {
-    return this.dx > 0 ? this.images[10] : this.images[11];
-  } else if (status === "sleeping-sitting-transition") {
-    return this.dx > 0 ? this.images[12] : this.images[13];
-  } else {
-    return this.dx > 0 ? this.images[0] : this.images[1];
-  }
+  const statusImageMap = {
+    moving: [0, 1],
+    sitting: [2, 3],
+    sleeping: [4, 5],
+    "sitting-transition": [6, 7],
+    "moving-transition": [8, 9],
+    "sleeping-transition": [10, 11],
+    "sleeping-sitting-transition": [12, 13],
+  };
+
+  // Default to 'moving' if status is not found
+  const imageIndices = statusImageMap[status] || statusImageMap["moving"];
+
+  // Choose the correct image based on direction (dx)
+  return this.images[imageIndices[this.dx > 0 ? 0 : 1]];
 };
 
 // 공통 프레임 업데이트 로직
 Capybara.prototype.updateFrame = function (currentTime, frameDuration) {
   if (currentTime - this.lastFrameTime >= frameDuration) {
     this.currentFrame = (this.currentFrame + 1) % this.frameCount;
-    console.log(this.randomState, this.currentFrame);
     this.lastFrameTime = currentTime;
   }
 };
@@ -385,8 +373,9 @@ Capybara.prototype.handleFalling = function () {
     if (Math.abs(this.speed) < 1.5) {
       this.isFalling = false;
       this.isMouseOn = false;
-      this.isMoving = true;
-      this.dx = Math.random() < 0.5 ? -0.12 : 0.12;
+      // this.isMoving = true;
+      this.randomState = "moving";
+      this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
     }
   } else {
     this.speed += this.gravity;
@@ -418,7 +407,7 @@ Capybara.prototype.handleRandomState = function (currentTime) {
   if (this.randomState === "moving") {
     this.x += this.dx;
     if (this.x > this.canvas.width || this.x < 0) {
-      this.dx = this.x > this.canvas.width ? -0.12 : 0.12;
+      this.dx = this.x > this.canvas.width ? -0.5 : 0.5;
     }
     this.updateFrame(currentTime, 100);
     this.draw("moving");
