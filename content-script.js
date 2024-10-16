@@ -81,7 +81,48 @@ window.addEventListener("load", function () {
     );
 
     // 애니메이션 시작
-    capybara.update();
+    // capybara.update();
+
+    const capybara2 = new Capybara(
+      canvas.width * Math.random(),
+      canvas.height,
+      45, // 반지름
+      "red", // 색상
+      1, // 속도
+      ctx,
+      canvas,
+      images,
+      "moving"
+    );
+
+    const capybara3 = new Capybara(
+      canvas.width * Math.random(),
+      canvas.height,
+      45, // 반지름
+      "red", // 색상
+      1, // 속도
+      ctx,
+      canvas,
+      images,
+      "moving"
+    );
+
+    // capybara2.update();
+
+    function animate(currentTime) {
+      // Clear the canvas before drawing both capybaras
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+      // Update and draw both capybaras
+      capybara.update(currentTime);
+      capybara2.update(currentTime);
+      capybara3.update(currentTime);
+  
+      requestAnimationFrame(animate);
+    }
+  
+    // Start the animation loop
+    requestAnimationFrame(animate);
 
     // 공 주위에서만 공 멈추기
     document.addEventListener("mousemove", (e) => {
@@ -400,7 +441,7 @@ Capybara.prototype.handleShowUp = function () {
 };
 
 Capybara.prototype.handleRandomState = function (currentTime) {
-  this.clearCanvas();
+  // this.clearCanvas();
   this.y = this.canvas.height - this.radius;
   this.color = "transparent";
 
@@ -441,7 +482,7 @@ Capybara.prototype.update = function (currentTime) {
     this.setRandomState();
   }
 
-  requestAnimationFrame(this.update.bind(this));
+  // requestAnimationFrame(this.update.bind(this));
 };
 
 Capybara.prototype.resize = function () {
