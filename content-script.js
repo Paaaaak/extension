@@ -80,9 +80,6 @@ window.addEventListener("load", function () {
       "moving"
     );
 
-    // 애니메이션 시작
-    // capybara.update();
-
     const capybara2 = new Capybara(
       canvas.width * Math.random(),
       canvas.height,
@@ -107,13 +104,10 @@ window.addEventListener("load", function () {
       "moving"
     );
 
-    // capybara2.update();
-
     function animate(currentTime) {
       // Clear the canvas before drawing both capybaras
       ctx.clearRect(0, 0, canvas.width, canvas.height);
   
-      // Update and draw both capybaras
       capybara.update(currentTime);
       capybara2.update(currentTime);
       capybara3.update(currentTime);
@@ -135,10 +129,8 @@ window.addEventListener("load", function () {
         );
 
         if (distance < capybara.radius * 2) {
-          capybara.isMoving = false;
           capybara.isMouseOn = true;
         } else {
-          capybara.isMoving = true;
           capybara.isMouseOn = false;
         }
       }
@@ -160,7 +152,6 @@ window.addEventListener("load", function () {
         capybara.isDragging = true;
         capybara.offsetX = mouseX - capybara.x;
         capybara.offsetY = mouseY - capybara.y;
-        capybara.isMoving = false;
       }
       // Redraw after clicking and setting drag state
       capybara.draw();
@@ -190,7 +181,6 @@ window.addEventListener("load", function () {
         e.preventDefault();
         e.stopPropagation();
         capybara.isDragging = false;
-        capybara.isMoving = false;
 
         if (capybara.y < canvas.height - 500) {
           console.log("is falling from high place");
@@ -230,7 +220,6 @@ var Capybara = function (
   this.speed = speed;
   this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
   this.gravity = 0.9;
-  this.isMoving = false;
   this.isSitting = false; // 추가: 초기 상태는 sitting 아님
   this.isDragging = false;
 
@@ -318,7 +307,7 @@ Capybara.prototype.setRandomState = function () {
   this.nextStateChange = Date.now() + randomTime;
 };
 
-Capybara.prototype.draw = function (status = null) {
+Capybara.prototype.draw = function () {
   this.ctx.beginPath();
   this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
   this.ctx.fillStyle = this.color;
@@ -376,7 +365,7 @@ Capybara.prototype.clearCanvas = function () {
 // 상태별 업데이트 로직 분리
 Capybara.prototype.handleState = function (currentTime) {
   if (this.isDragging) {
-    this.color = "green";
+    this.handleStatic();
   } else if (this.isFallingFromHigh) {
     this.handleFallingFromHigh();
   } else if (this.isFalling) {
@@ -384,7 +373,7 @@ Capybara.prototype.handleState = function (currentTime) {
   } else if (this.isShowUp) {
     this.handleShowUp();
   } else if (this.isMouseOn) {
-    this.color = "yellow";
+    this.handleStatic();
   } else {
     this.handleRandomState(currentTime);
   }
@@ -418,13 +407,17 @@ Capybara.prototype.handleFalling = function () {
     if (Math.abs(this.speed) < 1.5) {
       this.isFalling = false;
       this.isMouseOn = false;
-      // this.isMoving = true;
       this.randomState = "moving";
       this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
     }
   } else {
     this.speed += this.gravity;
   }
+  this.draw();
+};
+
+Capybara.prototype.handleStatic = function () {
+  this.clearCanvas();
   this.draw();
 };
 
