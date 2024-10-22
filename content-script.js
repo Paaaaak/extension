@@ -72,7 +72,6 @@ window.addEventListener("load", function () {
       canvas.width * Math.random(),
       canvas.height,
       45, // 반지름
-      "red", // 색상
       1, // 속도
       ctx,
       canvas,
@@ -84,7 +83,6 @@ window.addEventListener("load", function () {
       canvas.width * Math.random(),
       canvas.height,
       45, // 반지름
-      "red", // 색상
       1, // 속도
       ctx,
       canvas,
@@ -96,7 +94,6 @@ window.addEventListener("load", function () {
       canvas.width * Math.random(),
       canvas.height,
       45, // 반지름
-      "red", // 색상
       1, // 속도
       ctx,
       canvas,
@@ -206,7 +203,6 @@ var Capybara = function (
   x,
   y,
   radius,
-  color,
   speed,
   ctx,
   canvas,
@@ -216,7 +212,6 @@ var Capybara = function (
   this.x = x;
   this.y = y;
   this.radius = radius;
-  this.color = color;
   this.speed = speed;
   this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
   this.gravity = 0.9;
@@ -307,13 +302,7 @@ Capybara.prototype.setRandomState = function () {
   this.nextStateChange = Date.now() + randomTime;
 };
 
-Capybara.prototype.draw = function () {
-  this.ctx.beginPath();
-  this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-  this.ctx.fillStyle = this.color;
-  this.ctx.fill();
-  this.ctx.closePath();
-
+Capybara.prototype.draw = function (status = null) {
   let imageToDraw = this.getImageByStatus(status);
   const imageSize = this.radius * 2;
 
@@ -382,7 +371,6 @@ Capybara.prototype.handleState = function (currentTime) {
 // 상태별 처리 로직 리팩토링
 Capybara.prototype.handleFallingFromHigh = function () {
   this.clearCanvas();
-  this.color = "blue";
   this.y += this.speed;
   this.speed += this.gravity;
   this.draw();
@@ -398,7 +386,6 @@ Capybara.prototype.handleFallingFromHigh = function () {
 
 Capybara.prototype.handleFalling = function () {
   this.clearCanvas();
-  this.color = "blue";
   this.y += this.speed;
 
   if (this.y + this.radius >= this.canvas.height) {
@@ -424,7 +411,6 @@ Capybara.prototype.handleStatic = function () {
 Capybara.prototype.handleShowUp = function () {
   this.clearCanvas();
   this.y = this.canvas.height - this.radius;
-  this.color = "purple";
   this.draw();
 
   if (!this.fallTimeout) {
@@ -440,7 +426,6 @@ Capybara.prototype.handleShowUp = function () {
 Capybara.prototype.handleRandomState = function (currentTime) {
   // this.clearCanvas();
   this.y = this.canvas.height - this.radius;
-  this.color = "transparent";
 
   if (this.randomState === "moving") {
     this.x += this.dx;
