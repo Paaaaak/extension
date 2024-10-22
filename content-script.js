@@ -38,20 +38,20 @@ window.addEventListener("load", function () {
   }
 
   const imageSources = {
-    walkRight: chrome.runtime.getURL("walking-r.png"),
-    walkLeft: chrome.runtime.getURL("walking-l.png"),
-    sitRight: chrome.runtime.getURL("sitting-r.png"),
-    sitLeft: chrome.runtime.getURL("sitting-l.png"),
-    sleepRight: chrome.runtime.getURL("sleeping-r.png"),
-    sleepLeft: chrome.runtime.getURL("sleeping-l.png"),
-    moveToSitRight: chrome.runtime.getURL("sitting-transition-r.png"),
-    moveToSitLeft: chrome.runtime.getURL("sitting-transition-l.png"),
-    sitToMoveRight: chrome.runtime.getURL("moving-transition-r.png"),
-    sitToMoveLeft: chrome.runtime.getURL("moving-transition-l.png"),
-    sitToSleepRight: chrome.runtime.getURL("sleeping-transition-r.png"),
-    sitToSleepLeft: chrome.runtime.getURL("sleeping-transition-l.png"),
-    sleepToSitRight: chrome.runtime.getURL("sleeping-sitting-transition-r.png"),
-    sleepToSitLeft: chrome.runtime.getURL("sleeping-sitting-transition-l.png"),
+    walkRight: chrome.runtime.getURL("images/capybara/walking-r.png"),
+    walkLeft: chrome.runtime.getURL("images/capybara/walking-l.png"),
+    sitRight: chrome.runtime.getURL("images/capybara/sitting-r.png"),
+    sitLeft: chrome.runtime.getURL("images/capybara/sitting-l.png"),
+    sleepRight: chrome.runtime.getURL("images/capybara/sleeping-r.png"),
+    sleepLeft: chrome.runtime.getURL("images/capybara/sleeping-l.png"),
+    moveToSitRight: chrome.runtime.getURL("images/capybara/sitting-transition-r.png"),
+    moveToSitLeft: chrome.runtime.getURL("images/capybara/sitting-transition-l.png"),
+    sitToMoveRight: chrome.runtime.getURL("images/capybara/moving-transition-r.png"),
+    sitToMoveLeft: chrome.runtime.getURL("images/capybara/moving-transition-l.png"),
+    sitToSleepRight: chrome.runtime.getURL("images/capybara/sleeping-transition-r.png"),
+    sitToSleepLeft: chrome.runtime.getURL("images/capybara/sleeping-transition-l.png"),
+    sleepToSitRight: chrome.runtime.getURL("images/capybara/sleeping-sitting-transition-r.png"),
+    sleepToSitLeft: chrome.runtime.getURL("images/capybara/sleeping-sitting-transition-l.png"),
   };
 
   // Load images using the image source values
@@ -142,6 +142,8 @@ window.addEventListener("load", function () {
           capybara.isMouseOn = false;
         }
       }
+      // Always draw after hover detection
+      capybara.draw();
     });
 
     // 공을 클릭하면 드래그 시작
@@ -160,6 +162,8 @@ window.addEventListener("load", function () {
         capybara.offsetY = mouseY - capybara.y;
         capybara.isMoving = false;
       }
+      // Redraw after clicking and setting drag state
+      capybara.draw();
     });
 
     // 마우스 움직임에 따라 공을 드래그
