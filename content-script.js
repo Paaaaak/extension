@@ -2,6 +2,10 @@ window.addEventListener("load", function () {
   const canvasId = "backgroundCanvas";
   const existingCanvas = document.getElementById(canvasId);
 
+  const GRAVITY = 0.9;
+
+  this.window.GRAVITY = GRAVITY;
+
   // 기존 canvas가 있다면 삭제
   if (existingCanvas) {
     existingCanvas.remove();
@@ -76,29 +80,29 @@ window.addEventListener("load", function () {
       ctx,
       canvas,
       images,
-      "moving"
+      "parent"
     );
 
     const capybara2 = new Capybara(
       canvas.width * Math.random(),
       canvas.height,
-      45, // 반지름
+      25, // 반지름
       1, // 속도
       ctx,
       canvas,
       images,
-      "moving"
+      "child"
     );
 
     const capybara3 = new Capybara(
       canvas.width * Math.random(),
       canvas.height,
-      45, // 반지름
+      25, // 반지름
       1, // 속도
       ctx,
       canvas,
       images,
-      "moving"
+      "child"
     );
 
     function animate(currentTime) {
@@ -207,14 +211,15 @@ var Capybara = function (
   ctx,
   canvas,
   images,
-  randomState
+  type
 ) {
   this.x = x;
   this.y = y;
   this.radius = radius;
+  this.type = type;
+
   this.speed = speed;
   this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
-  this.gravity = 0.9;
   this.isSitting = false; // 추가: 초기 상태는 sitting 아님
   this.isDragging = false;
 
@@ -233,7 +238,7 @@ var Capybara = function (
   this.ctx = ctx;
   this.canvas = canvas;
   this.images = images;
-  this.randomState = randomState; // 초기 상태는 sitting
+  this.randomState = "moving"; // 초기 상태는 sitting
   this.nextStateChange = 4000; // 다음 상태 변경 시간
 };
 
@@ -372,7 +377,7 @@ Capybara.prototype.handleState = function (currentTime) {
 Capybara.prototype.handleFallingFromHigh = function () {
   this.clearCanvas();
   this.y += this.speed;
-  this.speed += this.gravity;
+  this.speed += GRAVITY;
   this.draw();
 
   if (this.y > this.canvas.height + 200 && !this.fallTimeout) {
@@ -398,7 +403,7 @@ Capybara.prototype.handleFalling = function () {
       this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
     }
   } else {
-    this.speed += this.gravity;
+    this.speed += GRAVITY;
   }
   this.draw();
 };
