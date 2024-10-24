@@ -1,20 +1,10 @@
 window.addEventListener("load", function () {
-  const canvasId = "backgroundCanvas";
-  const existingCanvas = document.getElementById(canvasId);
-
   const GRAVITY = 0.9;
 
   this.window.GRAVITY = GRAVITY;
 
-  // 기존 canvas가 있다면 삭제
-  if (existingCanvas) {
-    existingCanvas.remove();
-    return;
-  }
-
   // 새로운 canvas 생성
   const canvas = document.createElement("canvas");
-  canvas.id = canvasId;
 
   // 창 크기에 맞춰 canvas 크기 설정
   canvas.width = window.innerWidth;
@@ -78,6 +68,30 @@ window.addEventListener("load", function () {
     childSitLeft: chrome.runtime.getURL("images/child/sitting-l.png"),
     childSleepRight: chrome.runtime.getURL("images/child/sleeping-r.png"),
     childSleepLeft: chrome.runtime.getURL("images/child/sleeping-l.png"),
+    childMoveToSitRight: chrome.runtime.getURL(
+      "images/child/sitting-transition-r.png"
+    ),
+    childMoveToSitLeft: chrome.runtime.getURL(
+      "images/child/sitting-transition-l.png"
+    ),
+    childSitToMoveRight: chrome.runtime.getURL(
+      "images/child/moving-transition-r.png"
+    ),
+    childSitToMoveLeft: chrome.runtime.getURL(
+      "images/child/moving-transition-l.png"
+    ),
+    childSitToSleepRight: chrome.runtime.getURL(
+      "images/child/sleeping-transition-r.png"
+    ),
+    childSitToSleepLeft: chrome.runtime.getURL(
+      "images/child/sleeping-transition-l.png"
+    ),
+    childSleepToSitRight: chrome.runtime.getURL(
+      "images/child/sleeping-sitting-transition-r.png"
+    ),
+    childSleepToSitLeft: chrome.runtime.getURL(
+      "images/child/sleeping-sitting-transition-l.png"
+    ),
   };
 
   // Load images using the image source values
@@ -378,10 +392,10 @@ Capybara.prototype.getImageByStatus = function (type, status) {
       moving: [14, 15],
       sitting: [16, 17],
       sleeping: [18, 19],
-      "sitting-transition": [6, 7],
-      "moving-transition": [8, 9],
-      "sleeping-transition": [10, 11],
-      "sleeping-sitting-transition": [12, 13],
+      "sitting-transition": [20, 21],
+      "moving-transition": [22, 23],
+      "sleeping-transition": [24, 25],
+      "sleeping-sitting-transition": [26, 27],
     };
   }
 
