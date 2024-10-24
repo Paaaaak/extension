@@ -48,14 +48,30 @@ window.addEventListener("load", function () {
     sitLeft: chrome.runtime.getURL("images/capybara/sitting-l.png"),
     sleepRight: chrome.runtime.getURL("images/capybara/sleeping-r.png"),
     sleepLeft: chrome.runtime.getURL("images/capybara/sleeping-l.png"),
-    moveToSitRight: chrome.runtime.getURL("images/capybara/sitting-transition-r.png"),
-    moveToSitLeft: chrome.runtime.getURL("images/capybara/sitting-transition-l.png"),
-    sitToMoveRight: chrome.runtime.getURL("images/capybara/moving-transition-r.png"),
-    sitToMoveLeft: chrome.runtime.getURL("images/capybara/moving-transition-l.png"),
-    sitToSleepRight: chrome.runtime.getURL("images/capybara/sleeping-transition-r.png"),
-    sitToSleepLeft: chrome.runtime.getURL("images/capybara/sleeping-transition-l.png"),
-    sleepToSitRight: chrome.runtime.getURL("images/capybara/sleeping-sitting-transition-r.png"),
-    sleepToSitLeft: chrome.runtime.getURL("images/capybara/sleeping-sitting-transition-l.png"),
+    moveToSitRight: chrome.runtime.getURL(
+      "images/capybara/sitting-transition-r.png"
+    ),
+    moveToSitLeft: chrome.runtime.getURL(
+      "images/capybara/sitting-transition-l.png"
+    ),
+    sitToMoveRight: chrome.runtime.getURL(
+      "images/capybara/moving-transition-r.png"
+    ),
+    sitToMoveLeft: chrome.runtime.getURL(
+      "images/capybara/moving-transition-l.png"
+    ),
+    sitToSleepRight: chrome.runtime.getURL(
+      "images/capybara/sleeping-transition-r.png"
+    ),
+    sitToSleepLeft: chrome.runtime.getURL(
+      "images/capybara/sleeping-transition-l.png"
+    ),
+    sleepToSitRight: chrome.runtime.getURL(
+      "images/capybara/sleeping-sitting-transition-r.png"
+    ),
+    sleepToSitLeft: chrome.runtime.getURL(
+      "images/capybara/sleeping-sitting-transition-l.png"
+    ),
   };
 
   // Load images using the image source values
@@ -87,7 +103,7 @@ window.addEventListener("load", function () {
       canvas.width * Math.random(),
       canvas.height,
       25, // 반지름
-      1, // 속도
+      0.3, // 속도
       ctx,
       canvas,
       images,
@@ -98,7 +114,7 @@ window.addEventListener("load", function () {
       canvas.width * Math.random(),
       canvas.height,
       25, // 반지름
-      1, // 속도
+      0.3, // 속도
       ctx,
       canvas,
       images,
@@ -108,14 +124,22 @@ window.addEventListener("load", function () {
     function animate(currentTime) {
       // Clear the canvas before drawing both capybaras
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
+
       capybara.update(currentTime);
       capybara2.update(currentTime);
       capybara3.update(currentTime);
-  
+
+      if (capybara.getDistanceTo(capybara2) > 200) {
+        capybara2.followParent(capybara, 200);
+      }
+
+      if (capybara.getDistanceTo(capybara3) > 300) {
+        capybara3.followParent(capybara, 300);
+      }
+
       requestAnimationFrame(animate);
     }
-  
+
     // Start the animation loop
     requestAnimationFrame(animate);
 
@@ -203,16 +227,7 @@ window.addEventListener("load", function () {
   }
 });
 
-var Capybara = function (
-  x,
-  y,
-  radius,
-  speed,
-  ctx,
-  canvas,
-  images,
-  type
-) {
+var Capybara = function (x, y, radius, speed, ctx, canvas, images, type) {
   this.x = x;
   this.y = y;
   this.radius = radius;
@@ -220,14 +235,14 @@ var Capybara = function (
 
   this.speed = speed;
   this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
-  this.isSitting = false; // 추가: 초기 상태는 sitting 아님
-  this.isDragging = false;
 
+  this.isSitting = false;
+  this.isDragging = false;
   this.isFallingFromHigh = false;
   this.isFalling = false;
   this.isShowUp = false;
-
   this.isMouseOn = false;
+
   this.offsetX = 0;
   this.offsetY = 0;
   this.currentFrame = 0;
@@ -475,4 +490,35 @@ Capybara.prototype.update = function (currentTime) {
 Capybara.prototype.resize = function () {
   this.canvas.width = window.innerWidth;
   this.canvas.height = window.innerHeight;
+};
+
+Capybara.prototype.followParent = function (parent, minDistance) {
+  const distance = this.getDistanceTo(parent);
+
+  if (distance > minDistance) {
+    this.randomState = "moving";
+
+    console.log(parent.x - this.x);
+
+    
+    this.dx = parent.x - this.x < 0 ? -0.5 : 0.5;
+
+    // const dx = parent.x - this.x;
+
+    // // 속도 비율을 일정하게 유지
+    // const angle = Math.atan2(dy, dx);
+    // const followSpeed = 2; // 따라가는 속도
+
+    // // 부모를 향해 이동
+    // this.x += followSpeed * Math.cos(angle);
+    // this.y += followSpeed * Math.sin(angle);
+  } else {
+    this.update();
+  }
+};
+
+Capybara.prototype.getDistanceTo = function (otherCapybara) {
+  const dx = this.x - otherCapybara.x;
+  const dy = this.y - otherCapybara.y;
+  return Math.sqrt(dx * dx + dy * dy);
 };
