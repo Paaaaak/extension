@@ -93,6 +93,7 @@ window.addEventListener("load", function () {
       canvas.height,
       45, // 반지름
       1, // 속도
+      0.5,
       ctx,
       canvas,
       images,
@@ -103,7 +104,8 @@ window.addEventListener("load", function () {
       canvas.width * Math.random(),
       canvas.height,
       25, // 반지름
-      0.3, // 속도
+      null, // 속도
+      0.3,
       ctx,
       canvas,
       images,
@@ -114,7 +116,8 @@ window.addEventListener("load", function () {
       canvas.width * Math.random(),
       canvas.height,
       25, // 반지름
-      0.3, // 속도
+      null, // 속도
+      0.3,
       ctx,
       canvas,
       images,
@@ -227,14 +230,16 @@ window.addEventListener("load", function () {
   }
 });
 
-var Capybara = function (x, y, radius, speed, ctx, canvas, images, type) {
+var Capybara = function (x, y, radius, speed, walkingSpeed, ctx, canvas, images, type) {
   this.x = x;
   this.y = y;
   this.radius = radius;
   this.type = type;
 
   this.speed = speed;
-  this.dx = Math.random() < 0.5 ? -0.5 : 0.5; // 50% 확률로 음수 또는 양수
+  this.walkingSpeed = walkingSpeed;
+
+  this.dx = Math.random() < 0.5 ? -this.walkingSpeed : this.walkingSpeed; 
 
   this.isSitting = false;
   this.isDragging = false;
@@ -265,7 +270,7 @@ Capybara.prototype.setRandomState = function () {
     const randomValue = Math.random();
     if (randomValue < 0.5) {
       this.randomState = "moving";
-      this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
+      this.dx = Math.random() < 0.5 ? -this.walkingSpeed : this.walkingSpeed;
       randomTime = 5000;
     } else {
       this.randomState = "sitting-transition";
@@ -291,7 +296,7 @@ Capybara.prototype.setRandomState = function () {
     randomTime = 7000;
   } else if (this.randomState === "moving-transition") {
     this.randomState = "moving";
-    this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
+    this.dx = Math.random() < 0.5 ? -this.walkingSpeed : this.walkingSpeed;
     randomTime = 5000;
   } else if (this.randomState === "sleeping") {
     const randomValue = Math.random();
@@ -415,7 +420,7 @@ Capybara.prototype.handleFalling = function () {
       this.isFalling = false;
       this.isMouseOn = false;
       this.randomState = "moving";
-      this.dx = Math.random() < 0.5 ? -0.5 : 0.5;
+      this.dx = Math.random() < 0.5 ? -this.walkingSpeed : this.walkingSpeed;
     }
   } else {
     this.speed += GRAVITY;
@@ -450,7 +455,7 @@ Capybara.prototype.handleRandomState = function (currentTime) {
   if (this.randomState === "moving") {
     this.x += this.dx;
     if (this.x > this.canvas.width || this.x < 0) {
-      this.dx = this.x > this.canvas.width ? -0.5 : 0.5;
+      this.dx = this.x > this.canvas.width ? -this.walkingSpeed : this.walkingSpeed;
     }
     this.updateFrame(currentTime, 100);
     this.draw("moving");
@@ -501,17 +506,7 @@ Capybara.prototype.followParent = function (parent, minDistance) {
     console.log(parent.x - this.x);
 
     
-    this.dx = parent.x - this.x < 0 ? -0.5 : 0.5;
-
-    // const dx = parent.x - this.x;
-
-    // // 속도 비율을 일정하게 유지
-    // const angle = Math.atan2(dy, dx);
-    // const followSpeed = 2; // 따라가는 속도
-
-    // // 부모를 향해 이동
-    // this.x += followSpeed * Math.cos(angle);
-    // this.y += followSpeed * Math.sin(angle);
+    this.dx = parent.x - this.x < 0 ? -0.3 : 0.3;
   } else {
     this.update();
   }
