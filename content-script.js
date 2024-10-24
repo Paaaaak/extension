@@ -72,6 +72,12 @@ window.addEventListener("load", function () {
     sleepToSitLeft: chrome.runtime.getURL(
       "images/capybara/sleeping-sitting-transition-l.png"
     ),
+    childWalkRight: chrome.runtime.getURL("images/child/walking-r.png"),
+    childWalkLeft: chrome.runtime.getURL("images/child/walking-l.png"),
+    childSitRight: chrome.runtime.getURL("images/child/sitting-r.png"),
+    childSitLeft: chrome.runtime.getURL("images/child/sitting-l.png"),
+    childSleepRight: chrome.runtime.getURL("images/child/sleeping-r.png"),
+    childSleepLeft: chrome.runtime.getURL("images/child/sleeping-l.png"),
   };
 
   // Load images using the image source values
@@ -105,7 +111,7 @@ window.addEventListener("load", function () {
       canvas.height,
       25, // 반지름
       null, // 속도
-      0.3,
+      0.2,
       ctx,
       canvas,
       images,
@@ -230,7 +236,17 @@ window.addEventListener("load", function () {
   }
 });
 
-var Capybara = function (x, y, radius, speed, walkingSpeed, ctx, canvas, images, type) {
+var Capybara = function (
+  x,
+  y,
+  radius,
+  speed,
+  walkingSpeed,
+  ctx,
+  canvas,
+  images,
+  type
+) {
   this.x = x;
   this.y = y;
   this.radius = radius;
@@ -239,7 +255,7 @@ var Capybara = function (x, y, radius, speed, walkingSpeed, ctx, canvas, images,
   this.speed = speed;
   this.walkingSpeed = walkingSpeed;
 
-  this.dx = Math.random() < 0.5 ? -this.walkingSpeed : this.walkingSpeed; 
+  this.dx = Math.random() < 0.5 ? -this.walkingSpeed : this.walkingSpeed;
 
   this.isSitting = false;
   this.isDragging = false;
@@ -328,7 +344,7 @@ Capybara.prototype.setRandomState = function () {
 };
 
 Capybara.prototype.draw = function (status = null) {
-  let imageToDraw = this.getImageByStatus(status);
+  let imageToDraw = this.getImageByStatus(this.type, status);
   const imageSize = this.radius * 2;
 
   this.ctx.drawImage(
@@ -345,16 +361,29 @@ Capybara.prototype.draw = function (status = null) {
 };
 
 // 상태에 따른 이미지 선택 로직 분리
-Capybara.prototype.getImageByStatus = function (status) {
-  const statusImageMap = {
-    moving: [0, 1],
-    sitting: [2, 3],
-    sleeping: [4, 5],
-    "sitting-transition": [6, 7],
-    "moving-transition": [8, 9],
-    "sleeping-transition": [10, 11],
-    "sleeping-sitting-transition": [12, 13],
-  };
+Capybara.prototype.getImageByStatus = function (type, status) {
+  let statusImageMap = null;
+  if (type === "parent") {
+    statusImageMap = {
+      moving: [0, 1],
+      sitting: [2, 3],
+      sleeping: [4, 5],
+      "sitting-transition": [6, 7],
+      "moving-transition": [8, 9],
+      "sleeping-transition": [10, 11],
+      "sleeping-sitting-transition": [12, 13],
+    };
+  } else {
+    statusImageMap = {
+      moving: [14, 15],
+      sitting: [16, 17],
+      sleeping: [18, 19],
+      "sitting-transition": [6, 7],
+      "moving-transition": [8, 9],
+      "sleeping-transition": [10, 11],
+      "sleeping-sitting-transition": [12, 13],
+    };
+  }
 
   // Default to 'moving' if status is not found
   const imageIndices = statusImageMap[status] || statusImageMap["moving"];
@@ -455,9 +484,10 @@ Capybara.prototype.handleRandomState = function (currentTime) {
   if (this.randomState === "moving") {
     this.x += this.dx;
     if (this.x > this.canvas.width || this.x < 0) {
-      this.dx = this.x > this.canvas.width ? -this.walkingSpeed : this.walkingSpeed;
+      this.dx =
+        this.x > this.canvas.width ? -this.walkingSpeed : this.walkingSpeed;
     }
-    this.updateFrame(currentTime, 100);
+    this.updateFrame(currentTime, this.type === "parent" ? 100 : 60);
     this.draw("moving");
   } else if (this.randomState === "sitting-transition") {
     this.updateFrame(currentTime, 80);
@@ -505,8 +535,7 @@ Capybara.prototype.followParent = function (parent, minDistance) {
 
     console.log(parent.x - this.x);
 
-    
-    this.dx = parent.x - this.x < 0 ? -0.3 : 0.3;
+    this.dx = parent.x - this.x < 0 ? -this.walkingSpeed : this.walkingSpeed;
   } else {
     this.update();
   }
