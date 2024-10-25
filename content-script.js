@@ -1,10 +1,38 @@
-window.addEventListener("load", function () {
+// Listen for messages from the popup
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  console.log("onmessage", request);
+  if (request.isActive) {
+    createWorld();
+  } else {
+    removeWorld();
+  }
+});
+
+// Initial state check on page load
+chrome.storage.sync.get(["isActive"], function (result) {
+  console.log("isActive", result);
+  if (result.isActive) {
+    createWorld();
+  } else {
+    removeWorld();
+  }
+});
+
+function removeWorld() {
+  const canvas = document.getElementById("chrome-extension-canvas");
+  if (canvas) {
+    canvas.remove();
+  }
+}
+
+function createWorld() {
   const GRAVITY = 0.9;
 
   this.window.GRAVITY = GRAVITY;
 
   // 새로운 canvas 생성
   const canvas = document.createElement("canvas");
+  canvas.id = "chrome-extension-canvas";
 
   // 창 크기에 맞춰 canvas 크기 설정
   canvas.width = window.innerWidth;
@@ -248,7 +276,7 @@ window.addEventListener("load", function () {
       capybara.resize();
     });
   }
-});
+}
 
 var Capybara = function (
   x,

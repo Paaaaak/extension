@@ -1,15 +1,21 @@
-document.getElementById("action-button").addEventListener("click", () => {
-  // 현재 활성 탭 정보를 가져오기
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    const activeTab = tabs[0];
+document.addEventListener('DOMContentLoaded', function() {
+  const toggle = document.getElementById('toggle');
 
-    // 현재 탭에 content script를 실행
-    chrome.scripting.executeScript({
-      target: { tabId: activeTab.id },
-      files: ["content-script.js"],
+  // Retrieve the activation state from chrome storage
+  chrome.storage.sync.get(['isActive'], function(result) {
+    toggle.checked = result.isActive || false;  // Set the checkbox state
+  });
+
+  // Update the activation state on toggle
+  toggle.addEventListener('change', function() {
+    const isActive = toggle.checked;
+    chrome.storage.sync.set({ isActive });
+
+    // Notify content scripts of the state change
+    chrome.tabs.query({}, function(tabs) {
+      tabs.forEach(tab => {
+        chrome.tabs.sendMessage(tab.id, { isActive });
+      });
     });
-
-    // 팝업 닫기 (선택 사항)
-    // window.close();
   });
 });
