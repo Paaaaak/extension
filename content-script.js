@@ -16,7 +16,14 @@ chrome.storage.sync.get(["isActive"], function (result) {
   }
 });
 
+let animationId = null;
+
 function removeAnimation() {
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
+
   const canvas = document.getElementById("chrome-extension-canvas");
   if (canvas) {
     canvas.remove();
@@ -186,11 +193,11 @@ function createAnimation() {
         capybara3.followParent(capybara, 300);
       }
 
-      requestAnimationFrame(animate);
+      animationId = requestAnimationFrame(animate);
     }
 
     // Start the animation loop
-    requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(animate);
 
     // 공 주위에서만 공 멈추기
     document.addEventListener("mousemove", (e) => {
