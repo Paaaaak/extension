@@ -1,31 +1,29 @@
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-  console.log("onmessage", request);
   if (request.isActive) {
-    createWorld();
+    createAnimation();
   } else {
-    removeWorld();
+    removeAnimation();
   }
 });
 
 // Initial state check on page load
 chrome.storage.sync.get(["isActive"], function (result) {
-  console.log("isActive", result);
   if (result.isActive) {
-    createWorld();
+    createAnimation();
   } else {
-    removeWorld();
+    removeAnimation();
   }
 });
 
-function removeWorld() {
+function removeAnimation() {
   const canvas = document.getElementById("chrome-extension-canvas");
   if (canvas) {
     canvas.remove();
   }
 }
 
-function createWorld() {
+function createAnimation() {
   const GRAVITY = 0.9;
 
   this.window.GRAVITY = GRAVITY;
@@ -379,7 +377,7 @@ Capybara.prototype.setRandomState = function () {
     return `${hours}:${minutes}:${seconds}`;
   }
 
-  console.log(formatTimeFromDate(), "state:", this.randomState);
+  // console.log(formatTimeFromDate(), "state:", this.randomState);
 
   // 다음 상태 변경 타이머 설정
   this.nextStateChange = Date.now() + randomTime;
@@ -574,9 +572,6 @@ Capybara.prototype.followParent = function (parent, minDistance) {
 
   if (distance > minDistance) {
     this.randomState = "moving";
-
-    console.log(parent.x - this.x);
-
     this.dx = parent.x - this.x < 0 ? -this.walkingSpeed : this.walkingSpeed;
   } else {
     this.update();
