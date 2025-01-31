@@ -1,592 +1,458 @@
-// Listen for messages from the popup
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-  if (request.isActive) {
-    createAnimation();
-  } else {
-    removeAnimation();
-  }
-});
+(async () => {
+  const { Parent } = await import(chrome.runtime.getURL("src/js/parent.js"));
+  const { Child } = await import(chrome.runtime.getURL("src/js/child.js"));
 
-// Initial state check on page load
-chrome.storage.sync.get(["isActive"], function (result) {
-  if (result.isActive) {
-    createAnimation();
-  } else {
-    removeAnimation();
-  }
-});
+  let activeParent = null;
+  let activeChildren = [];
 
-let animationId = null;
+  let animationId = null;
 
-function removeAnimation() {
-  if (animationId) {
-    cancelAnimationFrame(animationId);
-    animationId = null;
-  }
+  // Listen for messages from the popup
+  // chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  //   if (request.isActive) {
+  //     createAnimation();
+  //   } else {
+  //     removeAnimation();
+  //   }
+  // });
 
-  const canvas = document.getElementById("chrome-extension-canvas");
-  if (canvas) {
-    canvas.remove();
-  }
-}
+  // // Initial state check on page load
+  // chrome.storage.sync.get(["isActive"], function (result) {
+  //   if (result.isActive) {
+  //     createAnimation();
+  //   } else {
+  //     removeAnimation();
+  //   }
+  // });
 
-function createAnimation() {
-  const GRAVITY = 0.9;
+  // 현재 사이트가 필터에 포함되었는지 확인
+  function isSiteBlocked(callback) {
+    chrome.storage.local.get({ sitefilter: [] }, (result) => {
+      const sitefilter = result.sitefilter;
+      const currentUrl = window.location.hostname; // 현재 사이트의 호스트네임
+      let isBlocked = false;
+      sitefilter.forEach((blockedSite) => {
+        if (currentUrl.includes(blockedSite)) {
+          isBlocked = true;
+          return;
+        }
+      });
 
-  this.window.GRAVITY = GRAVITY;
-
-  // 새로운 canvas 생성
-  const canvas = document.createElement("canvas");
-  canvas.id = "chrome-extension-canvas";
-
-  // 창 크기에 맞춰 canvas 크기 설정
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-
-  // canvas를 화면에 고정시키고, 스타일 적용
-  canvas.style.position = "fixed";
-  canvas.style.top = "0";
-  canvas.style.left = "0";
-  canvas.style.width = "100%";
-  canvas.style.height = "100%";
-  canvas.style.zIndex = "1000";
-  canvas.style.pointerEvents = "none"; // 클릭 등 이벤트 무시
-  document.body.appendChild(canvas);
-
-  const ctx = canvas.getContext("2d");
-
-  // 이미지 로드 함수
-  function loadImage(src) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = src;
-      img.onload = () => resolve(img);
+      console.log(sitefilter, currentUrl, isBlocked);
+      callback(isBlocked);
     });
   }
 
-  const imageSources = {
-    walkRight: chrome.runtime.getURL("images/capybara/walking-r.png"),
-    walkLeft: chrome.runtime.getURL("images/capybara/walking-l.png"),
-    sitRight: chrome.runtime.getURL("images/capybara/sitting-r.png"),
-    sitLeft: chrome.runtime.getURL("images/capybara/sitting-l.png"),
-    sleepRight: chrome.runtime.getURL("images/capybara/sleeping-r.png"),
-    sleepLeft: chrome.runtime.getURL("images/capybara/sleeping-l.png"),
-    moveToSitRight: chrome.runtime.getURL(
-      "images/capybara/sitting-transition-r.png"
-    ),
-    moveToSitLeft: chrome.runtime.getURL(
-      "images/capybara/sitting-transition-l.png"
-    ),
-    sitToMoveRight: chrome.runtime.getURL(
-      "images/capybara/moving-transition-r.png"
-    ),
-    sitToMoveLeft: chrome.runtime.getURL(
-      "images/capybara/moving-transition-l.png"
-    ),
-    sitToSleepRight: chrome.runtime.getURL(
-      "images/capybara/sleeping-transition-r.png"
-    ),
-    sitToSleepLeft: chrome.runtime.getURL(
-      "images/capybara/sleeping-transition-l.png"
-    ),
-    sleepToSitRight: chrome.runtime.getURL(
-      "images/capybara/sleeping-sitting-transition-r.png"
-    ),
-    sleepToSitLeft: chrome.runtime.getURL(
-      "images/capybara/sleeping-sitting-transition-l.png"
-    ),
-    childWalkRight: chrome.runtime.getURL("images/child/walking-r.png"),
-    childWalkLeft: chrome.runtime.getURL("images/child/walking-l.png"),
-    childSitRight: chrome.runtime.getURL("images/child/sitting-r.png"),
-    childSitLeft: chrome.runtime.getURL("images/child/sitting-l.png"),
-    childSleepRight: chrome.runtime.getURL("images/child/sleeping-r.png"),
-    childSleepLeft: chrome.runtime.getURL("images/child/sleeping-l.png"),
-    childMoveToSitRight: chrome.runtime.getURL(
-      "images/child/sitting-transition-r.png"
-    ),
-    childMoveToSitLeft: chrome.runtime.getURL(
-      "images/child/sitting-transition-l.png"
-    ),
-    childSitToMoveRight: chrome.runtime.getURL(
-      "images/child/moving-transition-r.png"
-    ),
-    childSitToMoveLeft: chrome.runtime.getURL(
-      "images/child/moving-transition-l.png"
-    ),
-    childSitToSleepRight: chrome.runtime.getURL(
-      "images/child/sleeping-transition-r.png"
-    ),
-    childSitToSleepLeft: chrome.runtime.getURL(
-      "images/child/sleeping-transition-l.png"
-    ),
-    childSleepToSitRight: chrome.runtime.getURL(
-      "images/child/sleeping-sitting-transition-r.png"
-    ),
-    childSleepToSitLeft: chrome.runtime.getURL(
-      "images/child/sleeping-sitting-transition-l.png"
-    ),
-  };
+  // 초기 데이터 가져오기
+  chrome.storage.sync.get("activeData", (result) => {
+    isSiteBlocked((isBlocked) => {
+      if (isBlocked) {
+        console.log("This site is blocked. Animation will not run.");
+        return;
+      }
 
-  // Load images using the image source values
-  const imagePromises = Object.values(imageSources).map((src) =>
-    loadImage(src)
-  );
+      if (result.activeData) {
+        const { activeParent, activeChildren } = result.activeData;
 
-  Promise.all(imagePromises)
-    .then((images) => {
-      startAnimation(images);
-    })
-    .catch((error) => {
-      console.error("Image load error:", error);
+        // 필요한 로직 추가
+        createAnimation(activeParent, activeChildren);
+      }
     });
+  });
 
-  function startAnimation(images) {
-    const capybara = new Capybara(
-      canvas.width * Math.random(),
-      canvas.height,
-      45, // 반지름
-      1, // 속도
-      0.5,
-      ctx,
-      canvas,
-      images,
-      "parent"
-    );
+  // 스토리지 변경 감지
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === "sync" && changes.activeData) {
+      isSiteBlocked((isBlocked) => {
+        if (isBlocked) {
+          console.log("This site is blocked. Animation will not run.");
+          removeAnimation(); // 애니메이션이 실행 중이면 제거
+          return;
+        }
 
-    const capybara2 = new Capybara(
-      canvas.width * Math.random(),
-      canvas.height,
-      25, // 반지름
-      null, // 속도
-      0.2,
-      ctx,
-      canvas,
-      images,
-      "child"
-    );
+        const { activeParent, activeChildren } = changes.activeData.newValue;
 
-    const capybara3 = new Capybara(
-      canvas.width * Math.random(),
-      canvas.height,
-      25, // 반지름
-      null, // 속도
-      0.3,
-      ctx,
-      canvas,
-      images,
-      "child"
-    );
+        // 필요한 로직 추가
+        removeAnimation(); // 기존 애니메이션 제거
+        createAnimation(activeParent, activeChildren);
+      });
+    }
+  });
 
-    function animate(currentTime) {
-      // Clear the canvas before drawing both capybaras
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      capybara.update(currentTime);
-      capybara2.update(currentTime);
-      capybara3.update(currentTime);
-
-      if (capybara.getDistanceTo(capybara2) > 200) {
-        capybara2.followParent(capybara, 200);
-      }
-
-      if (capybara.getDistanceTo(capybara3) > 300) {
-        capybara3.followParent(capybara, 300);
-      }
-
-      animationId = requestAnimationFrame(animate);
+  function removeAnimation() {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
     }
 
-    // Start the animation loop
-    animationId = requestAnimationFrame(animate);
+    const canvas = document.getElementById("chrome-extension-canvas");
+    if (canvas) {
+      canvas.remove();
+    }
+  }
 
-    // 공 주위에서만 공 멈추기
-    document.addEventListener("mousemove", (e) => {
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
+  function getStorageData(key) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.sync.get(key, (result) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(result);
+        }
+      });
+    });
+  }
 
-      if (!capybara.isDragging) {
-        const distance = Math.sqrt(
-          (mouseX - capybara.x) ** 2 + (mouseY - capybara.y) ** 2
+  function createAnimation(a, b) {
+    const GRAVITY = 0.9;
+
+    this.window.GRAVITY = GRAVITY;
+
+    // 새로운 canvas 생성
+    const canvas = document.createElement("canvas");
+    canvas.id = "chrome-extension-canvas";
+
+    // 창 크기에 맞춰 canvas 크기 설정
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // canvas를 화면에 고정시키고, 스타일 적용
+    canvas.style.position = "fixed";
+    canvas.style.top = "0";
+    canvas.style.left = "0";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.zIndex = "1000";
+    canvas.style.pointerEvents = "none"; // 클릭 등 이벤트 무시
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext("2d");
+
+    const imageSources = {
+      parent: {
+        default: {
+          idle: chrome.runtime.getURL("assets/images/parent/default/house.png"),
+        },
+      },
+      child: {
+        pisces: {
+          idleR: chrome.runtime.getURL(
+            "assets/images/child/pisces/sitting-r.png"
+          ),
+          idleL: chrome.runtime.getURL(
+            "assets/images/child/pisces/sitting-l.png"
+          ),
+          walkR: chrome.runtime.getURL(
+            "assets/images/child/pisces/walking-r.png"
+          ),
+          walkL: chrome.runtime.getURL(
+            "assets/images/child/pisces/walking-l.png"
+          ),
+        },
+        gemini: {
+          idleR: chrome.runtime.getURL(
+            "assets/images/child/gemini/sitting-r.png"
+          ),
+          idleL: chrome.runtime.getURL(
+            "assets/images/child/gemini/sitting-l.png"
+          ),
+          walkR: chrome.runtime.getURL(
+            "assets/images/child/gemini/walking-r.png"
+          ),
+          walkL: chrome.runtime.getURL(
+            "assets/images/child/gemini/walking-l.png"
+          ),
+        },
+      },
+    };
+
+    // 이미지 로드 함수
+    function loadImage(src) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => resolve(img);
+      });
+    }
+
+    async function loadAllImages() {
+      const loadedImages = { parent: {}, child: {} };
+
+      for (const [parentId, states] of Object.entries(imageSources.parent)) {
+        loadedImages.parent[parentId] = {};
+        const statePromises = Object.entries(states).map(
+          async ([state, src]) => {
+            loadedImages.parent[parentId][state] = await loadImage(src);
+          }
         );
+        await Promise.all(statePromises);
+      }
 
-        if (distance < capybara.radius * 2) {
-          capybara.isMouseOn = true;
+      for (const [childId, states] of Object.entries(imageSources.child)) {
+        loadedImages.child[childId] = {};
+        const statePromises = Object.entries(states).map(
+          async ([state, src]) => {
+            loadedImages.child[childId][state] = await loadImage(src);
+          }
+        );
+        await Promise.all(statePromises);
+      }
+
+      return loadedImages;
+    }
+
+    loadAllImages()
+      .then(async (images) => {
+        await startAnimation(a, b, images);
+      })
+      .catch((error) => {
+        console.error("Image load error:", error);
+      });
+
+    async function startAnimation(parentId, childrenIds, images) {
+      try {
+        // 스토리지에서 값을 가져오기
+        const result = await getStorageData("parentX");
+        const canvasWidth = canvas.width;
+
+        if (result.parentX !== undefined) {
+          if (result.parentX > canvasWidth) {
+            parentX = canvas.width * Math.random(); // 랜덤 값 생성
+            chrome.storage.sync.set({ parentX }); // 생성된 값을 스토리지에 저장
+          } else {
+            parentX = result.parentX; // 저장된 값을 사용
+          }
         } else {
-          capybara.isMouseOn = false;
-        }
-      }
-      // Always draw after hover detection
-      capybara.draw();
-    });
-
-    // 공을 클릭하면 드래그 시작
-    document.addEventListener("mousedown", (e) => {
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-      const distance = Math.sqrt(
-        (mouseX - capybara.x) ** 2 + (mouseY - capybara.y) ** 2
-      );
-
-      if (distance < capybara.radius) {
-        e.preventDefault();
-        e.stopPropagation();
-        capybara.isDragging = true;
-        capybara.offsetX = mouseX - capybara.x;
-        capybara.offsetY = mouseY - capybara.y;
-      }
-      // Redraw after clicking and setting drag state
-      capybara.draw();
-    });
-
-    // 마우스 움직임에 따라 공을 드래그
-    document.addEventListener("mousemove", (e) => {
-      if (capybara.isDragging) {
-        e.preventDefault();
-        e.stopPropagation();
-        capybara.x = e.clientX - capybara.offsetX;
-        capybara.y = e.clientY - capybara.offsetY;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        capybara.draw();
-      }
-    });
-
-    // 마우스를 놓으면 드래그 종료 및 공이 아래로 떨어짐
-    document.addEventListener("mouseup", (e) => {
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-      const distance = Math.sqrt(
-        (mouseX - capybara.x) ** 2 + (mouseY - capybara.y) ** 2
-      );
-
-      if (distance < capybara.radius) {
-        e.preventDefault();
-        e.stopPropagation();
-        capybara.isDragging = false;
-
-        if (capybara.y < canvas.height - 500) {
-          console.log("is falling from high place");
-          capybara.isFallingFromHigh = true;
-        } else {
-          console.log("is falling from low place");
-          capybara.isFalling = true;
+          parentX = canvas.width * Math.random(); // 랜덤 값 생성
+          chrome.storage.sync.set({ parentX }); // 생성된 값을 스토리지에 저장
         }
 
-        capybara.speed = 2;
-        capybara.dx = 0;
-        capybara.update();
+        let parent = null;
+
+        const frameHeigthRatioParent = 0.12; // 예: 너비를 캔버스 너비의 10%로 설정
+        const frameHeight = canvas.height * frameHeigthRatioParent; // 특정 비율로 높이 설정
+        const radius = frameHeight / 2; // 반지름 계산 (높이 기준)
+
+        if (parentId) {
+          parent = new Parent(
+            parentId,
+            parentX,
+            canvas.height,
+            radius, // 반지름
+            0, // 속도
+            ctx,
+            canvas,
+            images["parent"][parentId]
+          );
+        } else {
+          parent = null;
+        }
+
+        activeParent = parent;
+
+        const frameHeightRatio = 0.06; // 예: 높이를 캔버스 높이의 10%로 설정
+        const frameWidthRatio = 0.1; // 예: 너비를 캔버스 너비의 10%로 설정
+
+        childrenIds.forEach((childId) => {
+          const frameHeight = canvas.height * frameHeightRatio; // 특정 비율로 높이 설정
+          const frameWidth = canvas.width * frameWidthRatio; // 특정 비율로 너비 설정
+          const radius = frameHeight / 2; // 반지름 계산 (높이 기준)
+
+          const min = 0.07;
+          const max = 0.1;
+
+          const randomValue = Math.random() * (max - min) + min;
+
+          const child = new Child(
+            childId,
+            canvas.width * Math.random(),
+            canvas.height,
+            radius, // 반지름
+            null, // 속도
+            randomValue,
+            ctx,
+            canvas,
+            images["child"][childId],
+            "child"
+          );
+
+          activeChildren.push(child);
+        });
+
+        // 연기 입자 배열
+        const particles = [];
+
+        // 연기 입자 생성 함수
+        function createParticle(x, y) {
+          const min = -0.3;
+          const max = -0.2;
+          const randomValue = Math.random() * (max - min) + min;
+
+          return {
+            x,
+            y,
+            size: Math.random() * 1.5 + 3, // 입자 크기
+            alpha: 0.7, // 투명도
+            speedX: (Math.random() - 0.5) * 0.1, // 좌우 이동 속도
+            speedY: randomValue, // 위로 이동 속도
+            shrink: 1.005, // 크기 감소율
+          };
+        }
+
+        // 연기 애니메이션 함수
+        function updateAndDrawParticles() {
+          for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+
+            // 입자 속성 업데이트
+            p.x += p.speedX;
+            p.y += p.speedY;
+            p.size *= p.shrink;
+            p.alpha -= 0.002; // 점점 투명해짐
+
+            // 입자 그리기
+            if (p.alpha > 0) {
+              ctx.fillStyle = `rgba(100, 100, 100, ${p.alpha})`; // 연기 색상 (회색)
+              ctx.beginPath();
+              ctx.ellipse(
+                p.x, // 중심 X
+                p.y, // 중심 Y
+                p.size, // 가로 반지름
+                p.size * 0.6, // 세로 반지름 (가로보다 작게)
+                0, // 회전각도
+                0, // 시작 각도
+                Math.PI * 2 // 끝 각도
+              );
+              ctx.fill();
+            } else {
+              // 투명도가 0 이하인 입자는 제거
+              particles.splice(i, 1);
+            }
+          }
+        }
+
+        let lastParticleTime = 0; // 마지막 입자 생성 시간
+        const particleInterval = 800; // 입자 생성 간격 (밀리초, 1초)
+
+        function animate(currentTime) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          if (parent) {
+            parent.update(currentTime);
+
+            // Parent 위에 사각형 그리기
+            ctx.fillStyle = "transparent"; // 반투명 빨간색
+            const squareSize = 30; // 사각형 크기
+            const squareX = parent.x + 43; // 중심 정렬
+            const squareY = parent.y - 90; // 중심 정렬
+            ctx.fillRect(squareX, squareY, squareSize, squareSize);
+
+            // 연기 입자 생성 (1초에 한 번)
+            if (currentTime - lastParticleTime > particleInterval) {
+              particles.push(createParticle(squareX + squareSize / 2, squareY));
+              lastParticleTime = currentTime; // 마지막 생성 시간 갱신
+            }
+          }
+
+          // 연기 입자 업데이트 및 그리기
+          updateAndDrawParticles();
+
+          activeChildren.forEach((child) => {
+            child.update(currentTime);
+
+            if (!parent) {
+              return;
+            }
+
+            if (parent.getDistanceTo(child) > 200) {
+              child.followParent(parent, 200);
+            }
+          });
+
+          animationId = requestAnimationFrame(animate);
+        }
+
+        // Start the animation loop
+        animationId = requestAnimationFrame(animate);
+
+        // Parent를 클릭하면 드래그 시작
+        document.addEventListener("mousedown", (e) => {
+          if (!parent) {
+            return;
+          }
+
+          const mouseX = e.clientX;
+          const mouseY = e.clientY;
+          const distance = Math.sqrt(
+            (mouseX - parent.x) ** 2 + (mouseY - parent.y) ** 2
+          );
+
+          if (distance < parent.radius) {
+            e.preventDefault();
+            e.stopPropagation();
+            parent.isDragging = true;
+            parent.offsetX = mouseX - parent.x;
+            parent.offsetY = mouseY - parent.y;
+          }
+          // Redraw after clicking and setting drag state
+          parent.draw();
+        });
+
+        // 마우스 움직임에 따라 공을 드래그
+        document.addEventListener("mousemove", (e) => {
+          if (!parent) {
+            return;
+          }
+
+          if (parent.isDragging) {
+            e.preventDefault();
+            e.stopPropagation();
+            parent.x = e.clientX - parent.offsetX;
+            parent.y = e.clientY - parent.offsetY;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            parent.draw();
+          }
+        });
+
+        // 마우스를 놓으면 드래그 종료 및 공이 아래로 떨어짐
+        document.addEventListener("mouseup", (e) => {
+          if (!parent) {
+            return;
+          }
+
+          const mouseX = e.clientX;
+          const mouseY = e.clientY;
+          const distance = Math.sqrt(
+            (mouseX - parent.x) ** 2 + (mouseY - parent.y) ** 2
+          );
+
+          if (distance < parent.radius) {
+            e.preventDefault();
+            e.stopPropagation();
+            parent.isDragging = false;
+
+            parent.isFalling = true;
+
+            parent.speed = 2;
+            parent.dx = 0;
+            parent.update();
+
+            // 데이터 저장
+            chrome.storage.sync.set({ parentX: mouseX }, function () {
+              console.log(mouseX);
+            });
+          }
+        });
+
+        window.addEventListener("resize", function () {
+          if (!parent) {
+            return;
+          }
+
+          parent.resize();
+        });
+      } catch (e) {
+        console.error("Error fetching or saving data from storage:", e);
       }
-    });
-
-    window.addEventListener("resize", function () {
-      capybara.resize();
-    });
-  }
-}
-
-var Capybara = function (
-  x,
-  y,
-  radius,
-  speed,
-  walkingSpeed,
-  ctx,
-  canvas,
-  images,
-  type
-) {
-  this.x = x;
-  this.y = y;
-  this.radius = radius;
-  this.type = type;
-
-  this.speed = speed;
-  this.walkingSpeed = walkingSpeed;
-
-  this.dx = Math.random() < 0.5 ? -this.walkingSpeed : this.walkingSpeed;
-
-  this.isSitting = false;
-  this.isDragging = false;
-  this.isFallingFromHigh = false;
-  this.isFalling = false;
-  this.isShowUp = false;
-  this.isMouseOn = false;
-
-  this.offsetX = 0;
-  this.offsetY = 0;
-  this.currentFrame = 0;
-  this.frameCount = 7;
-  this.frameWidth = images[0].width / this.frameCount;
-  this.lastFrameTime = 0;
-  this.frameDuration = 100;
-  this.ctx = ctx;
-  this.canvas = canvas;
-  this.images = images;
-  this.randomState = "moving"; // 초기 상태는 sitting
-  this.nextStateChange = 4000; // 다음 상태 변경 시간
-};
-
-Capybara.prototype.setRandomState = function () {
-  let randomTime;
-  this.currentFrame = 0;
-
-  if (this.randomState === "moving") {
-    const randomValue = Math.random();
-    if (randomValue < 0.5) {
-      this.randomState = "moving";
-      this.dx = Math.random() < 0.5 ? -this.walkingSpeed : this.walkingSpeed;
-      randomTime = 5000;
-    } else {
-      this.randomState = "sitting-transition";
-      randomTime = 480;
     }
-  } else if (this.randomState === "sitting-transition") {
-    this.randomState = "sitting";
-    randomTime = 5000;
-  } else if (this.randomState === "sitting") {
-    const randomValue = Math.random();
-    if (randomValue < 0.3) {
-      this.randomState = "moving-transition";
-      randomTime = 480;
-    } else if (randomValue < 0.3) {
-      this.randomState = "sitting";
-      randomTime = 5000;
-    } else {
-      this.randomState = "sleeping-transition";
-      randomTime = 480;
-    }
-  } else if (this.randomState === "sleeping-transition") {
-    this.randomState = "sleeping";
-    randomTime = 7000;
-  } else if (this.randomState === "moving-transition") {
-    this.randomState = "moving";
-    this.dx = Math.random() < 0.5 ? -this.walkingSpeed : this.walkingSpeed;
-    randomTime = 5000;
-  } else if (this.randomState === "sleeping") {
-    const randomValue = Math.random();
-    if (randomValue < 0.5) {
-      this.randomState = "sleeping-sitting-transition";
-      randomTime = 480;
-    } else {
-      this.randomState = "sleeping";
-      randomTime = 7000;
-    }
-  } else if ((this.randomState = "sleeping-sitting-transition")) {
-    this.randomState = "sitting";
-    randomTime = 5000;
   }
-
-  function formatTimeFromDate() {
-    const now = new Date(Date.now());
-    const hours = now.getHours().toString().padStart(2, "0");
-    const minutes = now.getMinutes().toString().padStart(2, "0");
-    const seconds = now.getSeconds().toString().padStart(2, "0");
-
-    return `${hours}:${minutes}:${seconds}`;
-  }
-
-  // console.log(formatTimeFromDate(), "state:", this.randomState);
-
-  // 다음 상태 변경 타이머 설정
-  this.nextStateChange = Date.now() + randomTime;
-};
-
-Capybara.prototype.draw = function (status = null) {
-  let imageToDraw = this.getImageByStatus(this.type, status);
-  const imageSize = this.radius * 2;
-
-  this.ctx.drawImage(
-    imageToDraw,
-    this.currentFrame * (imageToDraw.width / this.frameCount),
-    0,
-    imageToDraw.width / this.frameCount,
-    imageToDraw.height,
-    this.x - this.radius,
-    this.y - this.radius,
-    imageSize,
-    imageSize
-  );
-};
-
-// 상태에 따른 이미지 선택 로직 분리
-Capybara.prototype.getImageByStatus = function (type, status) {
-  let statusImageMap = null;
-  if (type === "parent") {
-    statusImageMap = {
-      moving: [0, 1],
-      sitting: [2, 3],
-      sleeping: [4, 5],
-      "sitting-transition": [6, 7],
-      "moving-transition": [8, 9],
-      "sleeping-transition": [10, 11],
-      "sleeping-sitting-transition": [12, 13],
-    };
-  } else {
-    statusImageMap = {
-      moving: [14, 15],
-      sitting: [16, 17],
-      sleeping: [18, 19],
-      "sitting-transition": [20, 21],
-      "moving-transition": [22, 23],
-      "sleeping-transition": [24, 25],
-      "sleeping-sitting-transition": [26, 27],
-    };
-  }
-
-  // Default to 'moving' if status is not found
-  const imageIndices = statusImageMap[status] || statusImageMap["moving"];
-
-  // Choose the correct image based on direction (dx)
-  return this.images[imageIndices[this.dx > 0 ? 0 : 1]];
-};
-
-// 공통 프레임 업데이트 로직
-Capybara.prototype.updateFrame = function (currentTime, frameDuration) {
-  if (currentTime - this.lastFrameTime >= frameDuration) {
-    this.currentFrame = (this.currentFrame + 1) % this.frameCount;
-    this.lastFrameTime = currentTime;
-  }
-};
-
-// 캔버스 초기화
-Capybara.prototype.clearCanvas = function () {
-  this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-};
-
-// 상태별 업데이트 로직 분리
-Capybara.prototype.handleState = function (currentTime) {
-  if (this.isDragging) {
-    this.handleStatic();
-  } else if (this.isFallingFromHigh) {
-    this.handleFallingFromHigh();
-  } else if (this.isFalling) {
-    this.handleFalling();
-  } else if (this.isShowUp) {
-    this.handleShowUp();
-  } else if (this.isMouseOn) {
-    this.handleStatic();
-  } else {
-    this.handleRandomState(currentTime);
-  }
-};
-
-// 상태별 처리 로직 리팩토링
-Capybara.prototype.handleFallingFromHigh = function () {
-  this.clearCanvas();
-  this.y += this.speed;
-  this.speed += GRAVITY;
-  this.draw();
-
-  if (this.y > this.canvas.height + 200 && !this.fallTimeout) {
-    this.fallTimeout = setTimeout(() => {
-      this.isFallingFromHigh = false;
-      this.isShowUp = true;
-      this.fallTimeout = null;
-    }, 1500);
-  }
-};
-
-Capybara.prototype.handleFalling = function () {
-  this.clearCanvas();
-  this.y += this.speed;
-
-  if (this.y + this.radius >= this.canvas.height) {
-    this.y = this.canvas.height - this.radius;
-    this.speed = -this.speed * 0.4;
-    if (Math.abs(this.speed) < 1.5) {
-      this.isFalling = false;
-      this.isMouseOn = false;
-      this.randomState = "moving";
-      this.dx = Math.random() < 0.5 ? -this.walkingSpeed : this.walkingSpeed;
-    }
-  } else {
-    this.speed += GRAVITY;
-  }
-  this.draw();
-};
-
-Capybara.prototype.handleStatic = function () {
-  this.clearCanvas();
-  this.draw();
-};
-
-Capybara.prototype.handleShowUp = function () {
-  this.clearCanvas();
-  this.y = this.canvas.height - this.radius;
-  this.draw();
-
-  if (!this.fallTimeout) {
-    this.fallTimeout = setTimeout(() => {
-      this.isShowUp = false;
-      this.setRandomState();
-      this.fallTimeout = null;
-      this.draw();
-    }, 1500);
-  }
-};
-
-Capybara.prototype.handleRandomState = function (currentTime) {
-  // this.clearCanvas();
-  this.y = this.canvas.height - this.radius;
-
-  if (this.randomState === "moving") {
-    this.x += this.dx;
-    if (this.x > this.canvas.width || this.x < 0) {
-      this.dx =
-        this.x > this.canvas.width ? -this.walkingSpeed : this.walkingSpeed;
-    }
-    this.updateFrame(currentTime, this.type === "parent" ? 100 : 60);
-    this.draw("moving");
-  } else if (this.randomState === "sitting-transition") {
-    this.updateFrame(currentTime, 80);
-    this.draw("sitting-transition");
-  } else if (this.randomState === "moving-transition") {
-    this.updateFrame(currentTime, 80);
-    this.draw("moving-transition");
-  } else if (this.randomState === "sleeping-transition") {
-    this.updateFrame(currentTime, 80);
-    this.draw("sleeping-transition");
-  } else if (this.randomState === "sleeping-sitting-transition") {
-    this.updateFrame(currentTime, 80);
-    this.draw("sleeping-sitting-transition");
-  } else if (this.randomState === "sitting") {
-    this.updateFrame(currentTime, 200);
-    this.draw("sitting");
-  } else if (this.randomState === "sleeping") {
-    this.updateFrame(currentTime, 300);
-    this.draw("sleeping");
-  }
-};
-
-// 메인 업데이트 함수
-Capybara.prototype.update = function (currentTime) {
-  this.handleState(currentTime);
-
-  // 상태 전환 타이머
-  if (Date.now() >= this.nextStateChange) {
-    this.setRandomState();
-  }
-
-  // requestAnimationFrame(this.update.bind(this));
-};
-
-Capybara.prototype.resize = function () {
-  this.canvas.width = window.innerWidth;
-  this.canvas.height = window.innerHeight;
-};
-
-Capybara.prototype.followParent = function (parent, minDistance) {
-  const distance = this.getDistanceTo(parent);
-
-  if (distance > minDistance) {
-    this.randomState = "moving";
-    this.dx = parent.x - this.x < 0 ? -this.walkingSpeed : this.walkingSpeed;
-  } else {
-    this.update();
-  }
-};
-
-Capybara.prototype.getDistanceTo = function (otherCapybara) {
-  const dx = this.x - otherCapybara.x;
-  const dy = this.y - otherCapybara.y;
-  return Math.sqrt(dx * dx + dy * dy);
-};
+})();

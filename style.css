@@ -1,10 +1,343 @@
-.overlay2cdacaq313g {
-  position: fixed;
-  top: 0;
+:root {
+  --primary-color: #1D2F4E;
+  --secondary-color: #b39b63;
+  --font-size-base: 16px;
+  --padding-large: 20px;
+}
+
+body {
+  margin: 0 !important;
+}
+
+.header {
+  background-color: var(--primary-color);
+  width: 100%;
+  height: 50px;
+  padding-top: 10px;
+  padding-bottom: 20px;
+  display: flex;
+  justify-content: center; /* 세로 중앙 정렬 */
+  align-items: center; 
+}
+.header img {
+  width: 200px;
+}
+
+.hidden {
+  display: none;
+}
+
+.popup {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 350px;
+  height: 400px;
+  font-family: Arial, sans-serif;
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+.popup__tabs {
+  display: flex;
+  z-index: 10; 
+  cursor: pointer;
+  position: relative;
+}
+
+.popup__tab-content {
+  border-top: 1px solid var(--secondary-color);
+  background-color: var(--primary-color); /* border 색상 */
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box; /* Include padding in height calculation */
+}
+
+.popup__tab {
+  padding: 10px 20px;
+  position: relative;
+  cursor: pointer;
+  border: none; 
+  background-color: transparent; 
+  font-weight: bolder;
+  font-size: 15px;
+}
+
+.popup__tab.active {
+  border: 1px solid var(--secondary-color);
+  background-color: var(--primary-color);
+}
+
+.popup__tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 900;
-  background-color: rgba(0, 255, 191, 0.116);
+  width: 100%;
+  height: 10px; /* border 두께 */
+  background-color: var(--primary-color);
+}
+
+.popup-title {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  /* justify-content: center; */
+  font-size: 20px;
+  font-weight: bolder;
+  margin-bottom: 0.3rem;
+}
+
+.popup-title img {
+  width: 15px;
+  padding-left: 5px;
+  cursor: pointer;
+}
+
+.popup-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 999;
+  top: -15px;
+  left: 78px;
+  width: auto;
+  height: auto;
+  color: white;
+  padding: 5px;
+  border-radius: 5px;
+  background-color: rgba(0, 0, 0, 0.676);
+}
+.popup-tooltip2 {
+  display: none;
+  position: absolute;
+  z-index: 999;
+  top: -20px;
+  left: 125px;
+  width: auto;
+  height: auto;
+  color: white;
+  padding: 5px;
+  border-radius: 5px;
+  background-color: rgba(0, 0, 0, 0.676);
+}
+.popup-tooltip::after {
+  content: '';
+  position: absolute;
+  left: -20px;  /* 왼쪽에 삼각형 위치 */
+  top: 50%;  /* 수직 중앙에 위치 */
+  transform: translateY(-50%);  /* 정확히 중앙에 맞추기 */
+  border-width: 10px;
+  border-style: solid;
+  border-color: transparent rgba(0, 0, 0, 0.676) transparent transparent;  /* 삼각형 색상 설정 */
+}
+.popup-tooltip2::after {
+  content: '';
+  position: absolute;
+  left: -20px;  /* 왼쪽에 삼각형 위치 */
+  top: 50%;  /* 수직 중앙에 위치 */
+  transform: translateY(-50%);  /* 정확히 중앙에 맞추기 */
+  border-width: 10px;
+  border-style: solid;
+  border-color: transparent rgba(0, 0, 0, 0.676) transparent transparent;  /* 삼각형 색상 설정 */
+}
+
+.popup-tooltip.visible {
+  display: block;
+}
+.popup-tooltip2.visible {
+  display: block;
+}
+
+.popup__section {
+  margin-bottom: 1rem;
+  align-items: center;
+  position: relative;
+}
+
+.popup__parent-grid,
+.popup__children-grid {
+  gap: 0.3rem;
+  display: flex;
+  flex-direction: row;
+  border: 1px solid var(--secondary-color);
+  padding: 1rem;
+}
+
+.popup__parent {
+  cursor: pointer;
+  width: 50px;
+  height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.popup__parent.active {
+  background-color: #b9b9b93d;
+}
+
+.popup__child {
+  cursor: pointer;
+  width: 50px;
+  height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.popup__child.active {
+  background-color: #b9b9b93d;
+}
+
+.popup__parent-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 0.5rem;
+}
+
+.popup__child-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 0.5rem;
+}
+
+.popup__parent-name,
+.popup__child-name {
+  margin: 0 !important;
+  padding-top: 0.2rem;
+}
+
+.popup__comingsoon {
+  background-color: #b9b9b93d;
+  cursor: pointer;
+  width: 50px;
+  height: 70px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* 세로 중앙 정렬 */
+  align-items: center;    /* 가로 중앙 정렬 */
+  text-align: center;     /* 텍스트 가로 정렬 */
   pointer-events: none;
+  cursor: pointer;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* 세로 중앙 정렬 */
+  align-items: center;    /* 가로 중앙 정렬 */
+  text-align: center;     /* 텍스트 가로 정렬 */
+  padding: 1rem 0;
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+}
+
+.footer span {
+  cursor: pointer;
+  border-bottom: 1px solid var(--secondary-color);
+}
+
+
+
+.toggle {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  height: 30px;
+  cursor: pointer;
+}
+
+.toggle input {
+  display: none; /* 기본 체크박스를 숨김 */
+}
+
+.toggle__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--secondary-color);
+}
+
+.toggle__on,
+.toggle__off {
+  flex: 1;
+  display: flex;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--secondary-color);
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+/* input이 체크되었을 때 toggle__on의 색상을 빨간색으로 설정 */
+.toggle input:checked + .toggle__label .toggle__on {
+  background-color: #b39b63b8;
+}
+
+/* input이 체크되지 않았을 때 toggle__off의 색상을 빨간색으로 설정 */
+.toggle input:not(:checked) + .toggle__label .toggle__off {
+  background-color: #b39b63b8;
+}
+
+
+.popup-input {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 300px;
+  margin-top: 0.5rem;
+}
+
+input {
+  padding: 8px;
+  border: 1px solid var(--secondary-color);
+  background-color: transparent;
+  color: var(--secondary-color);
+  outline: none; /* 파란색 테두리 제거 */
+}
+
+#result-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto; 
+  height: 230px;
+}
+
+#result-container::-webkit-scrollbar-thumb {
+  background-color: var(--secondary-color); /* Scrollbar thumb color */
+  border-radius: 0; /* Remove border-radius on thumb */
+}
+
+#result-container::-webkit-scrollbar-track {
+  background-color: var(--secondary-color); /* Scrollbar track color */
+  border-radius: 0; /* Remove border-radius on track */
+}
+
+.result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: transparent;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--secondary-color);
+}
+
+.delete-button {
+  background-color: transparent;
+  border: none;
+  color: #ff4d4d;
+  cursor: pointer;
+}
+
+.delete-button:hover {
+  color: #ff0000;
 }

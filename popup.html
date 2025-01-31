@@ -1,46 +1,103 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Popup</title>
-  <style>
-    body {
-      width: 300px;
-      height: 450px;
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background-color: #f9f9f9;
-      margin: 0;
-    }
-
-    h1 {
-      font-size: 16px;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    button {
-      padding: 10px 20px;
-      cursor: pointer;
-      background-color: #a3ca48;
-      color: white;
-      border: none;
-      border-radius: 5px;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <div>
-    <h1>CAPPY</h1>
-    <label>
-      <label for="toggle">Capybara family:</label>
-      <input type="checkbox" id="toggle" name="toggle">
-    </label>
+  <div class="header">
+    <img src="/assets/images/title.png"> 
+  </div>
+
+  <div class="popup">
+    <!-- Tab Navigation -->
+    <div class="popup__tabs">
+      <div class="popup__tab active" data-tab="home">Home</div>
+      <div class="popup__tab" data-tab="options">Options</div>
+    </div>
+
+    <!-- Home Tab -->
+    <div class="popup__tab-content" id="home">
+      <!-- <div class="popup__section">
+        <label class="toggle">
+          <input type="checkbox" id="toggle" name="toggle" />
+          <span class="toggle__label">
+            <span class="toggle__on">ON</span>
+            <span class="toggle__off">OFF</span>
+          </span>
+        </label>
+      </div> -->
+      <div class="popup__section">
+        <div class="popup-title">
+          <span>Nest</span>
+          <img class="popup-tooltip-img" src="/assets/images/question.png" >
+        </div>
+        <div class="popup-tooltip">
+          - Only one Nest can be activated.<br>
+          - The position of the Nest can be moved through drag and drop.
+        </div>
+
+        <div class="popup__parent-grid">
+          <div class="popup__parent" id="default">
+            <img class="popup__parent-image" src="/assets/images/parent/default/profile.png">
+            <p class="popup__parent-name">Stump</p>
+          </div>
+          <div class="popup__comingsoon">
+            <p class="popup__comingsoon-name">Coming Soon</p>
+          </div>
+        </div>
+      </div>
+      <div class="popup__section">
+        <div class="popup-title">
+          <span>DUDUMIs</span>
+          <img class="popup-tooltip-img2" src="/assets/images/question.png">
+        </div>
+        <div class="popup-tooltip2">
+          - Multiple DUDUMIs can be activated.<br>
+          - DUDUMI tends to stay near the Nest.
+        </div>
+
+        <div class="popup__children-grid">
+          <div class="popup__child" id="pisces">
+            <img class="popup__child-image" src="/assets/images/child/pisces/profile.png">
+            <p class="popup__child-name">Pishie</p>
+          </div>
+          <div class="popup__child" id="gemini">
+            <img class="popup__child-image" src="/assets/images/child/gemini/profile.png">
+            <p class="popup__child-name">Gemmy</p>
+          </div>
+          <div class="popup__comingsoon">
+            <p class="popup__comingsoon-name">Coming Soon</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Options Tab -->
+    <div class="popup__tab-content hidden" id="options">
+      <div class="popup__section">
+        <div class="popup-title">
+          <span>Site Filter</span>
+        </div>
+        <span>(Sites containing the word you save will be excluded)</span>
+        
+        <div class="popup-input">
+          <input type="text" id="main-input" placeholder="Type and press Enter or click outside" />
+          <div id="result-container"></div>
+        </div>
+
+        
+      </div>
+    </div>
+  </div>
+  
+  <div class="footer">
     <span>Rate us</span>
   </div>
 
   <script src="popup.js"></script>
 </body>
+
 </html>
