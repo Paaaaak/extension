@@ -162,6 +162,20 @@
             "assets/images/child/gemini/walking-l.png"
           ),
         },
+        taury: {
+          idleR: chrome.runtime.getURL(
+            "assets/images/child/taury/sitting-r.png"
+          ),
+          idleL: chrome.runtime.getURL(
+            "assets/images/child/taury/sitting-l.png"
+          ),
+          walkR: chrome.runtime.getURL(
+            "assets/images/child/taury/walking-r.png"
+          ),
+          walkL: chrome.runtime.getURL(
+            "assets/images/child/taury/walking-l.png"
+          ),
+        },
       },
     };
 
