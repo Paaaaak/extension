@@ -3,7 +3,7 @@
   "permissions": ["storage"],
   "name": "DUDUMI",
   "description": "DUDUMI stays in your browser, creating a stable and comforting atmosphere.",
-  "version": "1.0",
+  "version": "1.1.0",
   "icons": {
     "16": "assets/icons/icon-16.png",
     "32": "assets/icons/icon-32.png",
