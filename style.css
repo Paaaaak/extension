@@ -123,6 +123,7 @@ body {
   background-color: rgba(0, 0, 0, 0.676);
 }
 .popup-tooltip::after {
+  pointer-events: none;
   content: '';
   position: absolute;
   left: -20px;  /* 왼쪽에 삼각형 위치 */
@@ -133,6 +134,7 @@ body {
   border-color: transparent rgba(0, 0, 0, 0.676) transparent transparent;  /* 삼각형 색상 설정 */
 }
 .popup-tooltip2::after {
+  pointer-events: none;
   content: '';
   position: absolute;
   left: -20px;  /* 왼쪽에 삼각형 위치 */
@@ -186,6 +188,11 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.popup__parent:hover,
+.popup__child:hover {
+  background-color: #b9b9b921;
 }
 
 .popup__child.active {
